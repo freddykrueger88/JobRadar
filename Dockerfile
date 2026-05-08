@@ -1,13 +1,9 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-# package-lock.json nicht im Repo -> npm install; bei Bedarf lock-file committen und zu npm ci wechseln
 RUN npm install --omit=dev --no-audit --no-fund
 COPY . .
 RUN mkdir -p data
-# Non-root User fuer sichereren Betrieb
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
-USER appuser
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
