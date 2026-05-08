@@ -17,15 +17,11 @@ document.addEventListener('DOMContentLoaded',()=>{ setTheme(localStorage.getItem
 document.addEventListener('click',e=>{ if(e.target.id==='themeBtn') setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); });
 
 function showTab(id){
-  // Alle Buttons und Panels deaktivieren
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tabpanel').forEach(el=>el.classList.remove('active'));
-  // Richtigen Button aktivieren
   document.querySelectorAll('[data-tab="'+id+'"]').forEach(el=>el.classList.add('active'));
-  // Richtiges Panel aktivieren (per ID)
   const panel = $(id);
   if(panel) panel.classList.add('active');
-  // Daten laden
   if(id==='dashboard') loadStats();
   if(id==='verlauf') loadBewerbungen();
   if(id==='vorlagen') loadVorlagen();
@@ -171,10 +167,17 @@ function mailModal(id,titel){ const profil=state.profil; const sub=encodeURIComp
 window.mailModal=mailModal;
 
 async function suche(){
-  const profil=state.profil; const quelle=$('sucheQuelle')?.value||'all'; const count=$('sucheCount')?.value||'15';
-  setLoading(true); log('Suche l\u00e4uft: '+quelle);
+  const profil=state.profil;
+  const quelle=$('sucheQuelle')?.value||'all';
+  const count=$('sucheCount')?.value||'15';
+  // Umkreissuche: Ort aus Suchfeld (Vorrang) oder Profil, plus Umkreis in km
+  const ortInput=$('sucheOrt')?.value.trim();
+  const ort=ortInput||profil.ort||'Remote';
+  const umkreis=$('sucheUmkreis')?.value||'0';
+  setLoading(true);
+  log('Suche l\u00e4uft: '+quelle+(umkreis>0?' \u2022 '+ort+' ('+umkreis+' km)':' \u2022 '+ort));
   try{
-    const data=await api('/api/suche?'+new URLSearchParams({quelle,rolle:profil.rollen||'Linux Administrator',ort:profil.ort||'Remote',count}));
+    const data=await api('/api/suche?'+new URLSearchParams({quelle,rolle:profil.rollen||'Linux Administrator',ort,count,umkreis}));
     if((data.errors||[]).length) data.errors.forEach(e=>log('Fehler: '+e));
     const rollen=(profil.rollen||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
     state.jobs=(data.results||[]).filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); }).map(j=>({...j,score:scoreJob(j)})).sort((a,b)=>b.score-a.score).slice(0,parseInt(count,10)||15);
