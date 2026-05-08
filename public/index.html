@@ -23,6 +23,7 @@
     <button class="tab" data-tab="vorlagen">Vorlagen</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
+
   <!-- Dashboard -->
   <div class="tabpanel active" id="dashboard">
     <div class="stat-grid">
@@ -34,7 +35,8 @@
     </div>
     <div class="card"><h2>Status-Log</h2><div class="log" id="log"></div></div>
   </div>
-  <!-- Suche -->
+
+  <!-- Stellensuche -->
   <div class="tabpanel" id="suche">
     <div class="card">
       <h2>Stellensuche</h2>
@@ -61,6 +63,7 @@
     <div id="quellenStatus" style="margin-bottom:14px"></div>
     <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>
   </div>
+
   <!-- Verlauf -->
   <div class="tabpanel" id="verlauf">
     <div class="card">
@@ -88,8 +91,9 @@
         <a class="btn" href="/api/bewerbungen/export/csv" download>CSV Export</a>
       </div>
     </div>
-    <div id="bewerbungenList"></div>
+    <div id="bewerbungenList"><div class="empty"><div class="empty-icon">📋</div><h3>Keine Bewerbungen</h3><p>Füge deine erste Bewerbung hinzu oder markiere eine Stelle aus der Suche.</p></div></div>
   </div>
+
   <!-- Anschreiben -->
   <div class="tabpanel" id="anschreiben">
     <div class="card">
@@ -120,6 +124,7 @@
       </div>
     </div>
   </div>
+
   <!-- Vorlagen -->
   <div class="tabpanel" id="vorlagen">
     <div class="vorlage-layout">
@@ -135,6 +140,7 @@
       </div></div>
     </div>
   </div>
+
   <!-- Profil -->
   <div class="tabpanel" id="profil">
     <div class="card">

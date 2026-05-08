@@ -1,5 +1,9 @@
 const api = async (url, method='GET', body=null) => {
   const r = await fetch(url, { method, headers: body?{'Content-Type':'application/json'}:{}, body:body?JSON.stringify(body):null });
+  if (!r.ok && r.status !== 200) {
+    const err = await r.json().catch(() => ({ error: 'Serverfehler ' + r.status }));
+    throw new Error(err.error || 'Fehler ' + r.status);
+  }
   return r.json();
 };
 const $ = id => document.getElementById(id);
@@ -12,7 +16,14 @@ function setTheme(t){ document.documentElement.dataset.theme=t; localStorage.set
 document.addEventListener('DOMContentLoaded',()=>{ setTheme(localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')); init(); });
 document.addEventListener('click',e=>{ if(e.target.id==='themeBtn') setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); });
 
-function showTab(id){ document.querySelectorAll('.tab,.tabpanel').forEach(el=>el.classList.remove('active')); document.querySelectorAll('[data-tab="'+id+'"]').forEach(el=>el.classList.add('active')); }
+function showTab(id){
+  document.querySelectorAll('.tab,.tabpanel').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('[data-tab="'+id+'"]').forEach(el=>el.classList.add('active'));
+  // Daten beim Tab-Wechsel nachladen
+  if(id==='verlauf') loadBewerbungen();
+  if(id==='dashboard') loadStats();
+  if(id==='vorlagen') loadVorlagen();
+}
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
 
 function log(msg){ const l=$('log'); if(!l) return; const ts='['+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'] '; l.textContent=l.textContent?l.textContent+'\n\n'+ts+msg:ts+msg; l.scrollTop=l.scrollHeight; }
@@ -34,9 +45,29 @@ function getMatch(firma,titel){ return state.bewerbungen.find(b=>b.firma.toLower
 async function requestNotifications(){ if(!('Notification' in window)) return; if(Notification.permission==='default') await Notification.requestPermission(); }
 function checkFollowupNotifications(){ if(Notification.permission!=='granted') return; const t=today(); state.bewerbungen.filter(b=>b.followup_datum===t&&b.status!=='angenommen'&&!b.archiviert).forEach(b=>new Notification('JobRadar',{body:`Follow-up fällig: ${b.titel} bei ${b.firma}`})); }
 
-async function loadStats(){ const s=await api('/api/bewerbungen/stats/overview'); const by=Object.fromEntries((s.byStatus||[]).map(x=>[x.status,x.c])); $('statGesamt').textContent=s.total; $('statFaellig').textContent=s.overdue; $('statInterview').textContent=by.interview||0; $('statAngenommen').textContent=by.angenommen||0; $('statAbgelehnt').textContent=by.abgelehnt||0; }
+async function loadStats(){
+  try {
+    const s=await api('/api/bewerbungen/stats/overview');
+    const by=Object.fromEntries((s.byStatus||[]).map(x=>[x.status,x.c]));
+    $('statGesamt').textContent=s.total;
+    $('statFaellig').textContent=s.overdue;
+    $('statInterview').textContent=by.interview||0;
+    $('statAngenommen').textContent=by.angenommen||0;
+    $('statAbgelehnt').textContent=by.abgelehnt||0;
+  } catch(e) { log('Stats konnten nicht geladen werden: '+e.message); }
+}
 
-async function loadBewerbungen(){ const status=$('filterStatus')?.value||''; const firma=$('filterFirma')?.value||''; const archiviert=$('filterArchiv')?.value||'0'; state.bewerbungen=await api('/api/bewerbungen?'+new URLSearchParams({status,firma,archiviert})); renderBewerbungen(); loadStats(); checkFollowupNotifications(); }
+async function loadBewerbungen(){
+  try {
+    const status=$('filterStatus')?.value||'';
+    const firma=$('filterFirma')?.value||'';
+    const archiviert=$('filterArchiv')?.value||'0';
+    state.bewerbungen=await api('/api/bewerbungen?'+new URLSearchParams({status,firma,archiviert}));
+    renderBewerbungen();
+    loadStats();
+    checkFollowupNotifications();
+  } catch(e) { log('Bewerbungen konnten nicht geladen werden: '+e.message); }
+}
 
 function renderBewerbungen(){
   const el=$('bewerbungenList'); if(!el) return;
@@ -79,12 +110,19 @@ window.toggleEdit=(id)=>{ const el=$('edit-'+id); if(el) el.classList.toggle('op
 window.saveInlineEdit=async(id)=>{ await api('/api/bewerbungen/'+id,'PUT',{notizen:$('notiz-'+id)?.value||'',followup_datum:$('followup-'+id)?.value||'',bewertung:$('bewertung-'+id)?.value?parseInt($('bewertung-'+id).value):null}); loadBewerbungen(); log('Gespeichert.'); };
 async function setStatus(id,status){ await api('/api/bewerbungen/'+id,'PUT',{status}); loadBewerbungen(); log('Status → '+status); }
 async function archivieren(id,ist){ await api('/api/bewerbungen/'+id,'PUT',{archiviert:ist?0:1}); loadBewerbungen(); }
-async function manuellHinzufuegen(){ const titel=prompt('Stelle:'); if(!titel) return; const firma=prompt('Firma:'); if(!firma) return; const status=prompt('Status:','beworben'); await api('/api/bewerbungen','POST',{titel,firma,status,beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10)}); loadBewerbungen(); log('Manuell gespeichert.'); }
+async function manuellHinzufuegen(){
+  const titel=prompt('Stelle (z. B. IT Support):'); if(!titel) return;
+  const firma=prompt('Firma:'); if(!firma) return;
+  const status=prompt('Status (beworben / interview / angenommen / abgelehnt):','beworben') || 'beworben';
+  await api('/api/bewerbungen','POST',{titel,firma,status,beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10)});
+  loadBewerbungen();
+  log('Manuell gespeichert: '+titel+' bei '+firma);
+}
 window.setStatus=setStatus; window.archivieren=archivieren;
 
 async function openTimeline(id){
   const b=state.bewerbungen.find(x=>x.id===id); if(!b) return;
-  const kommentare=await api('/api/bewerbungen/'+id+'/kommentare');
+  const kommentare=await api('/api/bewerbungen/'+id+'/kommentare').catch(()=>[]);
   const modal=document.createElement('div'); modal.className='modal-backdrop'; modal.id='modal-'+id;
   modal.innerHTML=`<div class="modal">
     <button class="modal-close" onclick="closeModal(${id})">&#x2715;</button>
@@ -121,7 +159,7 @@ async function suche(){
     const rollen=(profil.rollen||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
     state.jobs=(data.results||[]).filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); }).map(j=>({...j,score:scoreJob(j)})).sort((a,b)=>b.score-a.score).slice(0,parseInt(count,10)||15);
     renderJobs(); log(state.jobs.length+' Treffer nach Filter.');
-  }catch(e){ log('Fehler: '+e.message); }
+  }catch(e){ log('Fehler bei Suche: '+e.message); }
   setLoading(false);
 }
 
@@ -141,13 +179,21 @@ window.anschreibenErzeugen=(i)=>{
 };
 window.alsBeworben=async(i)=>{ const j=state.jobs[i]; if(getMatch(j.firma,j.titel)){log('Hinweis: Bereits beworben bei '+j.firma);return;} await api('/api/bewerbungen','POST',{titel:j.titel,firma:j.firma,ort:j.ort||'',quelle:j.quelle||'',url:j.url||'',beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10),status:'beworben'}); await loadBewerbungen(); renderJobs(); log('Beworben gespeichert: '+j.titel); if(Notification.permission!=='granted') requestNotifications(); };
 
-async function loadProfil(){ state.profil=await api('/api/profil'); const p=state.profil; ['name','email','rollen','ort','keywords','blacklist','kurzprofil','staerken'].forEach(k=>{const el=$(k);if(el) el.value=p[k]||'';}); }
+async function loadProfil(){
+  try {
+    state.profil=await api('/api/profil');
+    const p=state.profil;
+    ['name','email','rollen','ort','keywords','blacklist','kurzprofil','staerken'].forEach(k=>{const el=$(k);if(el) el.value=p[k]||'';});
+  } catch(e) { log('Profil konnte nicht geladen werden: '+e.message); }
+}
 async function saveProfil(){ const body={}; ['name','email','rollen','ort','keywords','blacklist','kurzprofil','staerken'].forEach(k=>{const el=$(k);if(el) body[k]=el.value;}); await api('/api/profil','PUT',body); state.profil={...state.profil,...body}; log('Profil gespeichert.'); }
 
 async function loadVorlagen(){
-  state.vorlagen=await api('/api/vorlagen');
-  const el=$('vorlagenList'); if(el){ if(!state.vorlagen.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">📝</div><h3>Keine Vorlagen</h3><p>Erstelle deine erste Vorlage.</p></div>`; } else { el.innerHTML=state.vorlagen.map((v,i)=>`<div class="card"><strong>${esc(v.name)}</strong><div class="muted" style="margin-top:6px;font-size:14px">${esc((v.einleitung||'').slice(0,80))}…</div><div class="actions"><button class="btn small" onclick="loadVorlage(${i})">Laden</button><button class="btn small" onclick="deleteVorlage(${v.id})">Löschen</button></div></div>`).join(''); } }
-  const sel=$('vorlagenSelect'); if(sel){ sel.innerHTML=state.vorlagen.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join(''); }
+  try {
+    state.vorlagen=await api('/api/vorlagen');
+    const el=$('vorlagenList'); if(el){ if(!state.vorlagen.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">📝</div><h3>Keine Vorlagen</h3><p>Erstelle deine erste Vorlage.</p></div>`; } else { el.innerHTML=state.vorlagen.map((v,i)=>`<div class="card"><strong>${esc(v.name)}</strong><div class="muted" style="margin-top:6px;font-size:14px">${esc((v.einleitung||'').slice(0,80))}…</div><div class="actions"><button class="btn small" onclick="loadVorlage(${i})">Laden</button><button class="btn small" onclick="deleteVorlage(${v.id})">Löschen</button></div></div>`).join(''); } }
+    const sel=$('vorlagenSelect'); if(sel){ sel.innerHTML=state.vorlagen.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join(''); }
+  } catch(e) { log('Vorlagen konnten nicht geladen werden: '+e.message); }
 }
 window.loadVorlage=(i)=>{const v=state.vorlagen[i];$('vorlageName').value=v.name;$('vorlageEinleitung').value=v.einleitung;$('vorlageSchluss').value=v.schluss;};
 window.deleteVorlage=async(id)=>{await api('/api/vorlagen/'+id,'DELETE');loadVorlagen();};
@@ -228,14 +274,18 @@ async function loadQuellenStatus() {
       const hint = q.keyRequired && !q.configured ? ' (Key fehlt)' : '';
       return `<span class="chip" style="border-color:${color};color:${color}">${esc(q.name)}${hint}</span>`;
     }).join('') + '</div>';
-  } catch(e) {}
+  } catch(e) { console.warn('Quellen-Status nicht verfügbar'); }
 }
 
 async function init(){
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
-  await loadProfil(); await loadVorlagen(); await loadBewerbungen();
-  document.querySelectorAll('#filterStatus,#filterArchiv').forEach(el=>el?.addEventListener('change',loadBewerbungen));
-  $('filterFirma')?.addEventListener('input',loadBewerbungen);
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  await loadProfil();
+  await loadVorlagen();
+  await loadBewerbungen();
+  // Filter-Event-Listener
+  $('filterStatus')?.addEventListener('change', loadBewerbungen);
+  $('filterArchiv')?.addEventListener('change', loadBewerbungen);
+  $('filterFirma')?.addEventListener('input', loadBewerbungen);
   requestNotifications();
   loadKiModels();
   loadQuellenStatus();

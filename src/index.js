@@ -1,22 +1,20 @@
 const express = require('express');
-const helmet = require('helmet');
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const { version } = require('../package.json');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
-// Sicherheits-Header
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(express.json({ limit: '500kb' }));
+// Sicherheits-Header (ohne helmet)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
 
-// Umgebungsvalidierung beim Start
-const requiredEnv = [];
-const missingEnv = requiredEnv.filter(k => !process.env[k]);
-if (missingEnv.length) {
-  console.error(`[FEHLER] Fehlende ENV-Variablen: ${missingEnv.join(', ')}`);
-  process.exit(1);
-}
+app.use(express.json({ limit: '500kb' }));
 
 // Einfaches Rate-Limiting
 const rateLimits = new Map();
@@ -54,7 +52,7 @@ app.get('/health', async (req, res, next) => {
         r.setTimeout(3000, () => { r.destroy(); reject(new Error('timeout')); });
       });
     } catch(e) { ollamaStatus = 'nicht erreichbar: ' + e.message; }
-    const healthy = dbStatus === 'ok' && ollamaStatus === 'ok';
+    const healthy = dbStatus === 'ok';
     res.status(healthy ? 200 : 503).json({
       status: healthy ? 'ok' : 'degraded',
       version,
@@ -72,7 +70,12 @@ app.use('/api/vorlagen',    require('./routes/vorlagen'));
 app.use('/api/suche',       require('./routes/suche'));
 app.use('/api/ki',          require('./routes/ki'));
 
-// 404 + zentraler Error-Handler (müssen ganz am Ende stehen)
+// SPA-Fallback: alle nicht-API-Routen → index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// 404 + zentraler Error-Handler
 app.use(notFoundHandler);
 app.use(errorHandler);
 
