@@ -59,6 +59,23 @@
           <div class="spinner" id="searchSpinner"></div>
         </div>
       </div>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label>📍 Ort / PLZ</label>
+          <input id="sucheOrt" placeholder="z. B. Achim, Bremen, 28832…">
+        </div>
+        <div>
+          <label>🔄 Umkreis</label>
+          <select id="sucheUmkreis">
+            <option value="0">Kein Umkreis</option>
+            <option value="10">10 km</option>
+            <option value="25" selected>25 km</option>
+            <option value="50">50 km</option>
+            <option value="100">100 km</option>
+            <option value="200">200 km</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div id="quellenStatus" style="margin-bottom:14px"></div>
     <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>

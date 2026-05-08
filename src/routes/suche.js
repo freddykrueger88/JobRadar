@@ -17,7 +17,7 @@ function httpGet(url, headers={}) {
   });
 }
 
-async function arbeitnow(rolle, ort, n) {
+async function arbeitnow(rolle, ort, n, umkreis) {
   const data = await httpGet('https://www.arbeitnow.com/api/job-board-api');
   return (data.data||[]).slice(0,80).map(j=>({
     titel: j.title, firma: j.company_name, ort: j.location,
@@ -26,7 +26,7 @@ async function arbeitnow(rolle, ort, n) {
   }));
 }
 
-async function jobicy(rolle, ort, n) {
+async function jobicy(rolle, ort, n, umkreis) {
   const q = encodeURIComponent(rolle.split(',')[0].trim());
   const data = await httpGet(`https://jobicy.com/api/v2/remote-jobs?count=${n}&keyword=${q}`);
   return (data.jobs||[]).map(j=>({
@@ -36,8 +36,17 @@ async function jobicy(rolle, ort, n) {
   }));
 }
 
-async function arbeitsagentur(rolle, ort, n) {
-  const params = new URLSearchParams({was: rolle.split(',')[0].trim(), wo: ort.split(',')[0].trim(), page:'1', size: String(n), veroeffentlichtseit:'30'});
+async function arbeitsagentur(rolle, ort, n, umkreis) {
+  const params = new URLSearchParams({
+    was: rolle.split(',')[0].trim(),
+    wo: ort.split(',')[0].trim(),
+    page: '1',
+    size: String(n),
+    veroeffentlichtseit: '30'
+  });
+  if (umkreis && parseInt(umkreis) > 0) {
+    params.set('umkreis', String(parseInt(umkreis)));
+  }
   const data = await httpGet(`https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs?${params}`, {'X-API-Key':'jobboerse-jobsuche'});
   return (data.stellenangebote||[]).map(j=>({
     titel: j.titel||j.beruf||j.refnr, firma: j.arbeitgeber||'Unbekannt',
@@ -48,7 +57,7 @@ async function arbeitsagentur(rolle, ort, n) {
   }));
 }
 
-async function themuse(rolle, ort, n) {
+async function themuse(rolle, ort, n, umkreis) {
   const q = encodeURIComponent(rolle.split(',')[0].trim());
   const data = await httpGet(`https://www.themuse.com/api/public/jobs?page=1&descending=true&category=${q}`);
   return (data.results||[]).map(j=>({
@@ -59,7 +68,7 @@ async function themuse(rolle, ort, n) {
   }));
 }
 
-async function remotive(rolle, ort, n) {
+async function remotive(rolle, ort, n, umkreis) {
   const q = encodeURIComponent(rolle.split(',')[0].trim());
   const data = await httpGet(`https://remotive.com/api/remote-jobs?search=${q}&limit=${n}`);
   return (data.jobs||[]).map(j=>({
@@ -69,13 +78,15 @@ async function remotive(rolle, ort, n) {
   }));
 }
 
-async function adzuna(rolle, ort, n) {
+async function adzuna(rolle, ort, n, umkreis) {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
   if (!appId || !appKey) throw new Error('ADZUNA_APP_ID / ADZUNA_APP_KEY nicht gesetzt');
   const q = encodeURIComponent(rolle.split(',')[0].trim());
   const loc = encodeURIComponent(ort.split(',')[0].trim() || 'Deutschland');
-  const data = await httpGet(`https://api.adzuna.com/v1/api/jobs/de/search/1?app_id=${appId}&app_key=${appKey}&results_per_page=${n}&what=${q}&where=${loc}&content-type=application/json`);
+  // Adzuna: distance in km
+  const dist = umkreis && parseInt(umkreis) > 0 ? `&distance=${parseInt(umkreis)}` : '';
+  const data = await httpGet(`https://api.adzuna.com/v1/api/jobs/de/search/1?app_id=${appId}&app_key=${appKey}&results_per_page=${n}&what=${q}&where=${loc}${dist}&content-type=application/json`);
   return (data.results||[]).map(j=>({
     titel: j.title, firma: j.company?.display_name||'', ort: j.location?.display_name||'',
     beschreibung: (j.description||'').replace(/<[^>]*>/g,' ').slice(0,300),
@@ -83,7 +94,7 @@ async function adzuna(rolle, ort, n) {
   }));
 }
 
-async function jooble(rolle, ort, n) {
+async function jooble(rolle, ort, n, umkreis) {
   const apiKey = process.env.JOOBLE_API_KEY;
   if (!apiKey) throw new Error('JOOBLE_API_KEY nicht gesetzt');
   const body = JSON.stringify({ keywords: rolle.split(',')[0].trim(), location: ort.split(',')[0].trim()||'Deutschland', page: '1', resultsOnPage: String(n) });
@@ -114,13 +125,13 @@ async function jooble(rolle, ort, n) {
 const QUELLEN = { arbeitnow, jobicy, arbeitsagentur, themuse, remotive, adzuna, jooble };
 
 router.get('/', async (req, res) => {
-  const { quelle='all', rolle='Linux Administrator', ort='Remote', count='15' } = req.query;
+  const { quelle='all', rolle='Linux Administrator', ort='Remote', count='15', umkreis='0' } = req.query;
   const n = Math.min(30, parseInt(count,10)||15);
   const results = []; const errors = [];
   const toFetch = quelle === 'all' ? Object.keys(QUELLEN) : [quelle];
   await Promise.allSettled(toFetch.map(async q => {
     if (!QUELLEN[q]) return;
-    try { results.push(...(await QUELLEN[q](rolle, ort, n))); }
+    try { results.push(...(await QUELLEN[q](rolle, ort, n, umkreis))); }
     catch(e) { errors.push(`${q}: ${e.message}`); }
   }));
   res.json({ results, errors });
