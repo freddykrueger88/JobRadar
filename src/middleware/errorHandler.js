@@ -6,7 +6,6 @@ function errorHandler(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
   const isProd = process.env.NODE_ENV === 'production';
 
-  // Nur intern loggen
   if (status >= 500) {
     console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} — ${err.message}`);
     if (!isProd) console.error(err.stack);
@@ -20,7 +19,11 @@ function errorHandler(err, req, res, next) {
 }
 
 function notFoundHandler(req, res) {
-  res.status(404).json({ error: `Route nicht gefunden: ${req.method} ${req.path}` });
+  const isProd = process.env.NODE_ENV === 'production';
+  // In Production keine internen Routing-Infos preisgeben
+  res.status(404).json({
+    error: isProd ? 'Nicht gefunden' : `Route nicht gefunden: ${req.method} ${req.path}`
+  });
 }
 
 module.exports = { errorHandler, notFoundHandler };

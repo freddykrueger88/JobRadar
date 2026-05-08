@@ -8,6 +8,8 @@ const bewerbungBody = [
   body('titel').trim().notEmpty().withMessage('Titel ist erforderlich').isLength({ max: 200 }),
   body('firma').trim().notEmpty().withMessage('Firma ist erforderlich').isLength({ max: 200 }),
   body('ort').optional().trim().isLength({ max: 200 }),
+  body('quelle').optional().trim().isLength({ max: 200 }),
+  body('url').optional().trim().isURL({ require_protocol: true }).withMessage('Ungueltige URL').isLength({ max: 2000 }),
   body('status').optional().isIn(['beworben','interview','angenommen','abgelehnt']),
   body('bewertung').optional({ nullable: true }).isInt({ min: 1, max: 5 }),
   body('beworben_am').optional().isDate(),
@@ -15,6 +17,29 @@ const bewerbungBody = [
   body('notizen').optional().trim().isLength({ max: 5000 }),
   body('anschreiben').optional().trim().isLength({ max: 20000 }),
 ];
+
+// ACHTUNG Reihenfolge: spezifische Routen (/stats/*, /export/*) MUESSEN vor /:id stehen!
+
+router.get('/stats/overview', (req, res, next) => {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const total = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0").get().c;
+    const byStatus = db.prepare("SELECT status, COUNT(*) as c FROM bewerbungen WHERE archiviert=0 GROUP BY status").all();
+    const overdue = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0 AND followup_datum < ? AND status != 'angenommen'").get(today).c;
+    res.json({ total, byStatus, overdue });
+  } catch(e) { next(e); }
+});
+
+router.get('/export/csv', (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT * FROM bewerbungen ORDER BY beworben_am DESC').all();
+    const header = ['id','titel','firma','ort','quelle','url','status','beworben_am','followup_datum','bewertung','notizen','archiviert'];
+    const csv = [header.join(','), ...rows.map(r => header.map(k => '"'+(String(r[k]||'').replace(/"/g,'""'))+'"').join(','))].join('\n');
+    res.setHeader('Content-Type','text/csv;charset=utf-8');
+    res.setHeader('Content-Disposition','attachment;filename="bewerbungen.csv"');
+    res.send(csv);
+  } catch(e) { next(e); }
+});
 
 router.get('/', (req, res, next) => {
   try {
@@ -52,12 +77,21 @@ router.put('/:id',
       const prev = db.prepare('SELECT status FROM bewerbungen WHERE id=?').get(req.params.id);
       if (!prev) return res.status(404).json({ error: 'Bewerbung nicht gefunden' });
       const { status, followup_datum, bewertung, notizen, anschreiben, archiviert } = req.body;
+      // Explizite null-Checks statt ||null damit leere Strings (z.B. Notizen loeschen) korrekt gespeichert werden
       db.prepare(`UPDATE bewerbungen SET
         status=COALESCE(?,status), followup_datum=COALESCE(?,followup_datum),
         bewertung=COALESCE(?,bewertung), notizen=COALESCE(?,notizen),
         anschreiben=COALESCE(?,anschreiben), archiviert=COALESCE(?,archiviert),
         aktualisiert_am=datetime('now') WHERE id=?`
-      ).run(status||null, followup_datum||null, bewertung||null, notizen||null, anschreiben||null, archiviert!=null?archiviert:null, req.params.id);
+      ).run(
+        status != null ? status : null,
+        followup_datum != null ? followup_datum : null,
+        bewertung != null ? bewertung : null,
+        notizen != null ? notizen : null,
+        anschreiben != null ? anschreiben : null,
+        archiviert != null ? archiviert : null,
+        req.params.id
+      );
       if (status && prev && status !== prev.status) {
         db.prepare('INSERT INTO kommentare (bewerbung_id, text) VALUES (?, ?)').run(req.params.id, 'Status geändert: '+prev.status+' → '+status);
       }
@@ -95,27 +129,6 @@ router.delete('/:bewId/kommentare/:id', param('bewId').isInt(), param('id').isIn
   try {
     db.prepare('DELETE FROM kommentare WHERE id=? AND bewerbung_id=?').run(req.params.id, req.params.bewId);
     res.json({ ok: true });
-  } catch(e) { next(e); }
-});
-
-router.get('/stats/overview', (req, res, next) => {
-  try {
-    const today = new Date().toISOString().slice(0,10);
-    const total = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0").get().c;
-    const byStatus = db.prepare("SELECT status, COUNT(*) as c FROM bewerbungen WHERE archiviert=0 GROUP BY status").all();
-    const overdue = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0 AND followup_datum < ? AND status != 'angenommen'").get(today).c;
-    res.json({ total, byStatus, overdue });
-  } catch(e) { next(e); }
-});
-
-router.get('/export/csv', (req, res, next) => {
-  try {
-    const rows = db.prepare('SELECT * FROM bewerbungen ORDER BY beworben_am DESC').all();
-    const header = ['id','titel','firma','ort','quelle','url','status','beworben_am','followup_datum','bewertung','notizen','archiviert'];
-    const csv = [header.join(','), ...rows.map(r => header.map(k => '"'+(String(r[k]||'').replace(/"/g,'""'))+'"').join(','))].join('\n');
-    res.setHeader('Content-Type','text/csv;charset=utf-8');
-    res.setHeader('Content-Disposition','attachment;filename="bewerbungen.csv"');
-    res.send(csv);
   } catch(e) { next(e); }
 });
 

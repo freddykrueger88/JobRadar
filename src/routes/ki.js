@@ -1,10 +1,25 @@
 const express = require('express');
 const router = express.Router();
+const { body } = require('express-validator');
+const { validate } = require('../middleware/validate');
 const https = require('https');
 const http = require('http');
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://192.168.178.122:11434';
+// Kein hardcodierter privater IP-Fallback – localhost ist der sichere Default
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral';
+
+// Maximale Laengen fuer Prompt-Felder (Schutz gegen Prompt Injection & Ueberlasten)
+const MAX_TITEL = 200;
+const MAX_FIRMA = 200;
+const MAX_BESCHREIBUNG = 500;
+const MAX_PROFIL_FELD = 300;
+const MAX_ANSCHREIBEN = 3000;
+
+/** Bereinigt einen String fuer sicheren Prompt-Einsatz */
+function sanitizePromptField(val, maxLen) {
+  return String(val || '').replace(/[\n\r`]/g, ' ').trim().slice(0, maxLen);
+}
 
 function ollamaRequest(prompt) {
   return new Promise((resolve, reject) => {
@@ -56,23 +71,43 @@ router.get('/models', async (req, res) => {
   }
 });
 
-router.post('/anschreiben', async (req, res) => {
+// Validierungsregeln fuer /anschreiben
+const anschreibenValidator = [
+  body('titel').trim().notEmpty().isLength({ max: MAX_TITEL }),
+  body('firma').trim().notEmpty().isLength({ max: MAX_FIRMA }),
+  body('ort').optional().trim().isLength({ max: 200 }),
+  body('beschreibung').optional().trim().isLength({ max: MAX_BESCHREIBUNG }),
+  body('tags').optional().isArray({ max: 20 }),
+  body('tags.*').optional().trim().isLength({ max: 100 }),
+  body('profil').optional().isObject(),
+];
+
+router.post('/anschreiben', anschreibenValidator, validate, async (req, res) => {
   const { titel, firma, ort, beschreibung, tags, profil } = req.body;
-  if (!titel || !firma) return res.status(400).json({ error: 'titel und firma erforderlich' });
+
+  // Alle Felder sanitizen bevor sie in den Prompt kommen
+  const safeTitel = sanitizePromptField(titel, MAX_TITEL);
+  const safeFirma = sanitizePromptField(firma, MAX_FIRMA);
+  const safeOrt   = sanitizePromptField(ort, 200);
+  const safeBeschreibung = sanitizePromptField(beschreibung, MAX_BESCHREIBUNG);
+  const safeTags = Array.isArray(tags) ? tags.map(t => sanitizePromptField(t, 100)).join(', ') : '';
+  const safeName   = sanitizePromptField(profil?.name, MAX_PROFIL_FELD);
+  const safeKurz   = sanitizePromptField(profil?.kurzprofil, MAX_PROFIL_FELD);
+  const safeStaerk = sanitizePromptField(profil?.staerken, MAX_PROFIL_FELD);
 
   const prompt = `Du bist ein professioneller Bewerbungsberater. Schreibe ein präzises deutsches Bewerbungsanschreiben für folgende Stelle.
 
 STELLE:
-Titel: ${titel}
-Firma: ${firma}
-Ort: ${ort || 'nicht angegeben'}
-${tags?.length ? 'Geforderte Skills: ' + tags.join(', ') : ''}
-${beschreibung ? 'Stellenbeschreibung (Auszug): ' + beschreibung.slice(0, 400) : ''}
+Titel: ${safeTitel}
+Firma: ${safeFirma}
+Ort: ${safeOrt || 'nicht angegeben'}
+${safeTags ? 'Geforderte Skills: ' + safeTags : ''}
+${safeBeschreibung ? 'Stellenbeschreibung (Auszug): ' + safeBeschreibung : ''}
 
 BEWERBER:
-Name: ${profil?.name || 'Max Mustermann'}
-Kurzprofil: ${profil?.kurzprofil || 'IT-Fachkraft mit Linux-Schwerpunkt'}
-Stärken und Skills: ${profil?.staerken || 'Linux, Docker, Support'}
+Name: ${safeName || 'Max Mustermann'}
+Kurzprofil: ${safeKurz || 'IT-Fachkraft mit Linux-Schwerpunkt'}
+Stärken und Skills: ${safeStaerk || 'Linux, Docker, Support'}
 
 ANFORDERUNGEN:
 - Formelle deutsche Briefform
@@ -92,15 +127,22 @@ Schreibe NUR den Anschreiben-Text.`;
   }
 });
 
-router.post('/feedback', async (req, res) => {
+// Validierungsregeln fuer /feedback
+const feedbackValidator = [
+  body('anschreiben').trim().notEmpty().isLength({ max: MAX_ANSCHREIBEN }),
+  body('stelle').optional().trim().isLength({ max: 300 }),
+];
+
+router.post('/feedback', feedbackValidator, validate, async (req, res) => {
   const { anschreiben, stelle } = req.body;
-  if (!anschreiben) return res.status(400).json({ error: 'anschreiben fehlt' });
+  const safeAnschreiben = sanitizePromptField(anschreiben, MAX_ANSCHREIBEN);
+  const safeStelle      = sanitizePromptField(stelle, 300);
 
   const prompt = `Analysiere dieses Bewerbungsanschreiben und gib kurzes, konstruktives Feedback auf Deutsch.
 
-STELLE: ${stelle || 'nicht angegeben'}
+STELLE: ${safeStelle || 'nicht angegeben'}
 ANSCHREIBEN:
-${anschreiben.slice(0, 1000)}
+${safeAnschreiben}
 
 Bewerte auf einer Skala 1-10 und nenne 2-3 konkrete Verbesserungsvorschläge. Halte die Antwort unter 150 Wörtern.`;
 
