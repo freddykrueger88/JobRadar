@@ -25,7 +25,7 @@
     <button class="tab" data-tab="suche">Stellensuche</button>
     <button class="tab" data-tab="verlauf">Verlauf</button>
     <button class="tab" data-tab="anschreiben">Anschreiben</button>
-    <button class="tab" data-tab="vorlagen">Vorlagen</button>
+    <button class="tab" data-tab="vorlagen">KI-Stile</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
 
@@ -132,8 +132,8 @@
           </div>
         </div>
         <div class="vorlage-select-bar">
-          <label style="margin:0;white-space:nowrap">Vorlage:</label>
-          <select id="vorlagenSelect" style="flex:1;min-width:0"></select>
+          <label style="margin:0;white-space:nowrap">🎨 KI-Stil:</label>
+          <select id="vorlagenSelect" style="flex:1;min-width:0"><option value="">Kein Stil (Standard)</option></select>
         </div>
         <div><label>Betreff</label><input id="letterSubject" value="Bewerbung"></div>
         <div><label>Text (bearbeitbar)</label><textarea id="letterPreview" rows="20" placeholder="Klicke auf ✨ KI-Anschreiben generieren oder wähle eine Stelle aus der Suche."></textarea></div>
@@ -147,19 +147,51 @@
     </div>
   </div>
 
-  <!-- Vorlagen -->
+  <!-- KI-Stile -->
   <div class="tabpanel" id="vorlagen">
     <div class="vorlage-layout">
-      <div><div class="card"><h2>Gespeicherte Vorlagen</h2><div id="vorlagenList"></div></div></div>
-      <div><div class="card">
-        <h2>Vorlage bearbeiten / neu</h2>
-        <div class="stack">
-          <div><label>Name</label><input id="vorlageName" value="Standard Linux / IT Support"></div>
-          <div><label>Einleitung</label><textarea id="vorlageEinleitung" rows="4"></textarea></div>
-          <div><label>Schluss</label><textarea id="vorlageSchluss" rows="3"></textarea></div>
-          <button class="btn primary" onclick="saveVorlage()">Vorlage speichern</button>
+      <div>
+        <div class="card">
+          <h2>🎨 Gespeicherte KI-Stile</h2>
+          <p class="muted" style="font-size:14px;margin-bottom:16px">Stile steuern Ton, Länge und besondere Hinweise die die KI beim Erstellen des Anschreibens berücksichtigt.</p>
+          <div id="vorlagenList"></div>
         </div>
-      </div></div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Neuen Stil erstellen</h2>
+          <div class="stack">
+            <div><label>Name</label><input id="vorlageName" placeholder="z. B. IT Support formell"></div>
+            <div class="row">
+              <div><label>Ton</label>
+                <select id="vorlageTon">
+                  <option value="formell">Formell &amp; professionell</option>
+                  <option value="modern">Modern &amp; direkt</option>
+                  <option value="kreativ">Kreativ &amp; ausdrucksstark</option>
+                  <option value="kurz">Sehr kurz &amp; prägnant</option>
+                </select>
+              </div>
+              <div><label>Länge</label>
+                <select id="vorlageLaenge">
+                  <option value="kurz">Kurz (~120 Wörter)</option>
+                  <option value="mittel" selected>Mittel (~220 Wörter)</option>
+                  <option value="lang">Lang (~350 Wörter)</option>
+                </select>
+              </div>
+            </div>
+            <div><label>Sprache</label>
+              <select id="vorlageSprache">
+                <option value="deutsch">Deutsch</option>
+                <option value="englisch">Englisch</option>
+              </select>
+            </div>
+            <div><label>Besondere Hinweise für die KI</label>
+              <textarea id="vorlageHinweise" rows="4" placeholder="z. B. Betone Linux-Erfahrung und Open-Source-Begeisterung. Keine Floskeln."></textarea>
+            </div>
+            <button class="btn primary" onclick="saveVorlage()">Stil speichern</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
