@@ -1,8 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-# npm ci garantiert reproduzierbare Builds (exakt wie package-lock.json)
-RUN npm ci --omit=dev --no-audit --no-fund
+# package-lock.json nicht im Repo -> npm install; bei Bedarf lock-file committen und zu npm ci wechseln
+RUN npm install --omit=dev --no-audit --no-fund
 COPY . .
 RUN mkdir -p data
 # Non-root User fuer sichereren Betrieb
