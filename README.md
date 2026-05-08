@@ -1,7 +1,7 @@
 # 🎯 JobRadar
 
 <p align="center">
-  <img src="https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/f0c46642-409b-49bb-81e9-51f2306959d5.png" alt="JobRadar Logo" width="220"/>
+  <img src="./public/logo.png" alt="JobRadar Logo" width="220"/>
 </p>
 
 <p align="center">
@@ -134,7 +134,7 @@ Für das Schreiben von Bewerbungsanschreiben auf Deutsch ist **Mistral 7B** die 
 | **RAM-Bedarf** | ✅ Ab 8 GB RAM | ✅ Ab 4 GB RAM | ⚠️ Ab 16 GB RAM |
 | **Anweisungen folgen** | ✅ Zuverlässig | ⚠️ Gelegentlich abweichend | ✅ Sehr zuverlässig |
 
-Mistral trifft den perfekten Mittelweg: Es ist **klein genug** um auf fast jedem Rechner flüssig zu laufen, aber **intelligent genug** um formelles Deutsch mit dem richtigen Ton für Bewerbungsanschreiben zu produzieren. Es hält sich zuverlässig an den vorgegebenen Prompt-Aufbau — also keine unnötigen Erklärungen, keine englischen Passagen, direkt ein fertiges Anschreiben.
+Mistral trifft den perfekten Mittelweg: Es ist **klein genug** um auf fast jedem Rechner flüssig zu laufen, aber **intelligent genug** um formelles Deutsch mit dem richtigen Ton für Bewerbungsanschreiben zu produzieren.
 
 > **Tipp:** Wer mehr als 16 GB RAM hat, kann `phi4` ausprobieren — die Qualität ist noch etwas besser, braucht aber deutlich mehr Ressourcen.
 
@@ -146,6 +146,7 @@ Mistral trifft den perfekten Mittelweg: Es ist **klein genug** um auf fast jedem
 JobRadar/
 ├── public/          # Frontend (HTML, CSS, JS, PWA)
 │   ├── index.html
+│   ├── logo.png
 │   ├── css/style.css
 │   ├── js/app.js
 │   ├── manifest.json
