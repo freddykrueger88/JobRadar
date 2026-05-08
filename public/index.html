@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#01696f"/>
+  <title>JobRadar</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="manifest" href="/manifest.json"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo"></div><div>JobRadar</div></div>
+    <button class="btn" id="themeBtn">Dark Mode</button>
+  </div>
+  <div id="loadingBar" class="loading-bar"></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="suche">Stellensuche</button>
+    <button class="tab" data-tab="verlauf">Verlauf</button>
+    <button class="tab" data-tab="anschreiben">Anschreiben</button>
+    <button class="tab" data-tab="vorlagen">Vorlagen</button>
+    <button class="tab" data-tab="profil">Profil</button>
+  </div>
+  <!-- Dashboard -->
+  <div class="tabpanel active" id="dashboard">
+    <div class="stat-grid">
+      <div class="stat"><div class="num" id="statGesamt">–</div><div class="lbl">Gesamt</div></div>
+      <div class="stat"><div class="num" id="statFaellig">–</div><div class="lbl">Überfällig</div></div>
+      <div class="stat"><div class="num" id="statInterview">–</div><div class="lbl">Interview</div></div>
+      <div class="stat"><div class="num" id="statAngenommen">–</div><div class="lbl">Angenommen</div></div>
+      <div class="stat"><div class="num" id="statAbgelehnt">–</div><div class="lbl">Abgelehnt</div></div>
+    </div>
+    <div class="card"><h2>Status-Log</h2><div class="log" id="log"></div></div>
+  </div>
+  <!-- Suche -->
+  <div class="tabpanel" id="suche">
+    <div class="card">
+      <h2>Stellensuche</h2>
+      <div class="row3">
+        <div><label>Quelle</label>
+          <select id="sucheQuelle">
+            <option value="all">Alle Quellen</option>
+            <option value="arbeitnow">Arbeitnow</option>
+            <option value="jobicy">Jobicy (Remote)</option>
+            <option value="arbeitsagentur">Arbeitsagentur</option>
+            <option value="themuse">The Muse</option>
+            <option value="remotive">Remotive (Remote)</option>
+            <option value="adzuna">Adzuna 🔑</option>
+            <option value="jooble">Jooble 🔑</option>
+          </select>
+        </div>
+        <div><label>Max. Treffer</label><input id="sucheCount" type="number" value="15" min="1" max="30"></div>
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <button class="btn primary" onclick="suche()">Suche starten</button>
+          <div class="spinner" id="searchSpinner"></div>
+        </div>
+      </div>
+    </div>
+    <div id="quellenStatus" style="margin-bottom:14px"></div>
+    <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>
+  </div>
+  <!-- Verlauf -->
+  <div class="tabpanel" id="verlauf">
+    <div class="card">
+      <h2>Bewerbungsverlauf</h2>
+      <div class="row3">
+        <div><label>Status</label>
+          <select id="filterStatus">
+            <option value="">Alle</option>
+            <option value="beworben">Beworben</option>
+            <option value="interview">Interview</option>
+            <option value="angenommen">Angenommen</option>
+            <option value="abgelehnt">Abgelehnt</option>
+          </select>
+        </div>
+        <div><label>Firma</label><input id="filterFirma" placeholder="z. B. Bosch…"></div>
+        <div><label>Ansicht</label>
+          <select id="filterArchiv">
+            <option value="0">Aktive Bewerbungen</option>
+            <option value="1">Archiv</option>
+          </select>
+        </div>
+      </div>
+      <div class="footerbar">
+        <button class="btn" onclick="manuellHinzufuegen()">+ Manuell hinzufügen</button>
+        <a class="btn" href="/api/bewerbungen/export/csv" download>CSV Export</a>
+      </div>
+    </div>
+    <div id="bewerbungenList"></div>
+  </div>
+  <!-- Anschreiben -->
+  <div class="tabpanel" id="anschreiben">
+    <div class="card">
+      <h2>Anschreiben-Generator</h2>
+      <div class="stack">
+        <div class="ki-bar">
+          <label>✨ KI-Generierung</label>
+          <select id="kiModel" style="flex:1;min-width:0;max-width:260px"><option value="mistral">mistral</option></select>
+          <button class="btn primary" onclick="kiAnschreibenErzeugen()">KI-Anschreiben generieren</button>
+          <button class="btn" onclick="kiFeedback()">KI-Feedback</button>
+          <div class="ki-generating" id="kiGenerating">
+            <div class="spinner active" style="width:18px;height:18px;border-width:2px"></div>
+            <span>KI arbeitet…</span>
+          </div>
+        </div>
+        <div class="vorlage-select-bar">
+          <label style="margin:0;white-space:nowrap">Vorlage:</label>
+          <select id="vorlagenSelect" style="flex:1;min-width:0"></select>
+        </div>
+        <div><label>Betreff</label><input id="letterSubject" value="Bewerbung"></div>
+        <div><label>Text (bearbeitbar)</label><textarea id="letterPreview" rows="20" placeholder="Klicke auf ✨ KI-Anschreiben generieren oder wähle eine Stelle aus der Suche."></textarea></div>
+        <div id="feedbackBox" class="feedback-box"></div>
+        <div class="footerbar">
+          <button class="btn primary" onclick="exportPdf()">Als PDF exportieren</button>
+          <button class="btn" onclick="sendMail()">✉ Als E-Mail öffnen</button>
+          <button class="btn" onclick="navigator.clipboard.writeText($('letterPreview').value).then(()=>log('Kopiert.'))">Kopieren</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Vorlagen -->
+  <div class="tabpanel" id="vorlagen">
+    <div class="vorlage-layout">
+      <div><div class="card"><h2>Gespeicherte Vorlagen</h2><div id="vorlagenList"></div></div></div>
+      <div><div class="card">
+        <h2>Vorlage bearbeiten / neu</h2>
+        <div class="stack">
+          <div><label>Name</label><input id="vorlageName" value="Standard Linux / IT Support"></div>
+          <div><label>Einleitung</label><textarea id="vorlageEinleitung" rows="4"></textarea></div>
+          <div><label>Schluss</label><textarea id="vorlageSchluss" rows="3"></textarea></div>
+          <button class="btn primary" onclick="saveVorlage()">Vorlage speichern</button>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <!-- Profil -->
+  <div class="tabpanel" id="profil">
+    <div class="card">
+      <h2>Mein Profil</h2>
+      <div class="stack">
+        <div class="row">
+          <div><label>Name</label><input id="name"></div>
+          <div><label>E-Mail</label><input id="email" type="email"></div>
+        </div>
+        <div class="row">
+          <div><label>Zielrollen</label><input id="rollen" placeholder="Linux Administrator, IT Support…"></div>
+          <div><label>Ort / Remote</label><input id="ort" placeholder="Remote, Niedersachsen…"></div>
+        </div>
+        <div class="row">
+          <div><label>Keywords</label><input id="keywords" placeholder="Linux, Docker, Ansible…"></div>
+          <div><label>Blacklist</label><input id="blacklist" placeholder="SAP, Vertrieb…"></div>
+        </div>
+        <div><label>Kurzprofil</label><textarea id="kurzprofil" rows="4" placeholder="Dein kurzes berufliches Profil…"></textarea></div>
+        <div><label>Stärken / Skills</label><textarea id="staerken" rows="3" placeholder="Linux, Docker, Proxmox, Troubleshooting…"></textarea></div>
+        <button class="btn primary" onclick="saveProfil()">Profil speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body>
+</html>
