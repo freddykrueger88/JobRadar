@@ -7,8 +7,6 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
-// WICHTIG: Foreign Key Enforcement aktivieren (SQLite deaktiviert das standardmaessig!)
-// Ohne dieses Pragma funktioniert ON DELETE CASCADE nicht.
 db.pragma('foreign_keys = ON');
 
 db.exec(`
@@ -40,6 +38,10 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS vorlagen (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    ton TEXT DEFAULT 'formell',
+    sprache TEXT DEFAULT 'deutsch',
+    laenge TEXT DEFAULT 'mittel',
+    hinweise TEXT,
     einleitung TEXT,
     schluss TEXT,
     erstellt_am TEXT DEFAULT (datetime('now'))
@@ -51,28 +53,43 @@ db.exec(`
     keywords TEXT, blacklist TEXT, kurzprofil TEXT, staerken TEXT
   );
 
-  -- Indizes fuer haeufige Abfragen
   CREATE INDEX IF NOT EXISTS idx_bew_status     ON bewerbungen(status);
   CREATE INDEX IF NOT EXISTS idx_bew_archiviert ON bewerbungen(archiviert);
   CREATE INDEX IF NOT EXISTS idx_bew_followup   ON bewerbungen(followup_datum);
   CREATE INDEX IF NOT EXISTS idx_komm_bew_id    ON kommentare(bewerbung_id);
 `);
 
+// Migration: neue Spalten zu vorlagen hinzufuegen falls nicht vorhanden
+try { db.exec(`ALTER TABLE vorlagen ADD COLUMN ton TEXT DEFAULT 'formell'`); } catch(e) {}
+try { db.exec(`ALTER TABLE vorlagen ADD COLUMN sprache TEXT DEFAULT 'deutsch'`); } catch(e) {}
+try { db.exec(`ALTER TABLE vorlagen ADD COLUMN laenge TEXT DEFAULT 'mittel'`); } catch(e) {}
+try { db.exec(`ALTER TABLE vorlagen ADD COLUMN hinweise TEXT`); } catch(e) {}
+
 const count = db.prepare('SELECT COUNT(*) as c FROM vorlagen').get();
 if (count.c === 0) {
-  db.prepare(`INSERT INTO vorlagen (name, einleitung, schluss) VALUES (?, ?, ?)`).run(
-    'Standard Linux / IT Support',
-    'mit großem Interesse habe ich Ihre Stellenausschreibung gelesen. Aufgrund meines Profils sehe ich eine hohe fachliche Nähe zu Ihren Anforderungen.',
-    'Gern möchte ich meine Erfahrung in Ihr Team einbringen und Sie in einem persönlichen Gespräch überzeugen.'
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
+    'Standard IT / Linux',
+    'formell',
+    'deutsch',
+    'mittel',
+    'Betone Linux-Kenntnisse, Docker und Troubleshooting. Zeige Begeisterung fuer Open Source.'
   );
-  db.prepare(`INSERT INTO vorlagen (name, einleitung, schluss) VALUES (?, ?, ?)`).run(
-    'Systemadministration Fokus',
-    'die ausgeschriebene Position spricht mich besonders an, da sie meine Schwerpunkte in Linux, Infrastruktur und technischem Troubleshooting sehr gut trifft.',
-    'Über die Gelegenheit, meine Kenntnisse praxisnah bei Ihnen einzubringen, würde ich mich sehr freuen.'
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
+    'Kurz & Praegnant',
+    'formell',
+    'deutsch',
+    'kurz',
+    'Halte das Anschreiben sehr knapp. Maximal 150 Woerter. Keine Floskeln.'
+  );
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
+    'Modern & Direkt',
+    'modern',
+    'deutsch',
+    'mittel',
+    'Moderner, direkter Stil ohne klassische Floskeln. Starte mit einem starken ersten Satz.'
   );
 }
 
-// Leeres Profil anlegen (kein vorausgefuellter Dummy-Name)
 const profil = db.prepare('SELECT COUNT(*) as c FROM profil').get();
 if (profil.c === 0) {
   db.prepare(`INSERT INTO profil (id) VALUES (1)`).run();

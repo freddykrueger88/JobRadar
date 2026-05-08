@@ -4,11 +4,10 @@ const { body } = require('express-validator');
 const { validate } = require('../middleware/validate');
 const https = require('https');
 const http = require('http');
+const db = require('../db/database');
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral';
-
-// Kaltstart Mistral 7B braucht bis zu 120s – daher 180s Timeout
 const OLLAMA_TIMEOUT_MS = 180000;
 
 const MAX_TITEL = 200;
@@ -82,41 +81,51 @@ const anschreibenValidator = [
   body('tags').optional().isArray({ max: 20 }),
   body('tags.*').optional().trim().isLength({ max: 100 }),
   body('profil').optional().isObject(),
+  body('stilId').optional().isInt({ min: 1 }),
 ];
 
 router.post('/anschreiben', anschreibenValidator, validate, async (req, res) => {
-  const { titel, firma, ort, beschreibung, tags, profil } = req.body;
+  const { titel, firma, ort, beschreibung, tags, profil, stilId } = req.body;
 
-  const safeTitel = sanitizePromptField(titel, MAX_TITEL);
-  const safeFirma = sanitizePromptField(firma, MAX_FIRMA);
-  const safeOrt   = sanitizePromptField(ort, 200);
+  const safeTitel       = sanitizePromptField(titel, MAX_TITEL);
+  const safeFirma       = sanitizePromptField(firma, MAX_FIRMA);
+  const safeOrt         = sanitizePromptField(ort, 200);
   const safeBeschreibung = sanitizePromptField(beschreibung, MAX_BESCHREIBUNG);
-  const safeTags = Array.isArray(tags) ? tags.map(t => sanitizePromptField(t, 100)).join(', ') : '';
-  const safeName   = sanitizePromptField(profil?.name, MAX_PROFIL_FELD);
-  const safeKurz   = sanitizePromptField(profil?.kurzprofil, MAX_PROFIL_FELD);
-  const safeStaerk = sanitizePromptField(profil?.staerken, MAX_PROFIL_FELD);
+  const safeTags        = Array.isArray(tags) ? tags.map(t => sanitizePromptField(t, 100)).join(', ') : '';
+  const safeName        = sanitizePromptField(profil?.name, MAX_PROFIL_FELD);
+  const safeKurz        = sanitizePromptField(profil?.kurzprofil, MAX_PROFIL_FELD);
+  const safeStaerk      = sanitizePromptField(profil?.staerken, MAX_PROFIL_FELD);
 
-  const prompt = `Du bist ein professioneller Bewerbungsberater. Schreibe ein pr\u00e4zises deutsches Bewerbungsanschreiben f\u00fcr folgende Stelle.
+  // Stil-Vorgabe aus DB laden
+  let stilBlock = '';
+  if (stilId) {
+    const stil = db.prepare('SELECT * FROM vorlagen WHERE id=?').get(stilId);
+    if (stil) {
+      const tonMap = { formell: 'formell und professionell', modern: 'modern und direkt ohne klassische Floskeln', kreativ: 'kreativ und ausdrucksstark', kurz: 'sehr kurz und praegnant' };
+      const laengeMap = { kurz: 'maximal 120 Woerter', mittel: 'maximal 220 Woerter', lang: 'maximal 350 Woerter' };
+      stilBlock = `\nSTIL-VORGABE:\n- Ton: ${tonMap[stil.ton] || stil.ton}\n- Laenge: ${laengeMap[stil.laenge] || stil.laenge}\n- Sprache: ${stil.sprache || 'deutsch'}${stil.hinweise ? '\n- Besondere Hinweise: ' + stil.hinweise : ''}`;
+    }
+  }
+
+  const prompt = `Du bist ein professioneller Bewerbungsberater. Schreibe ein ${stilId ? '' : 'formelles '}deutsches Bewerbungsanschreiben fuer folgende Stelle.
 
 STELLE:
 Titel: ${safeTitel}
 Firma: ${safeFirma}
 Ort: ${safeOrt || 'nicht angegeben'}
 ${safeTags ? 'Geforderte Skills: ' + safeTags : ''}
-${safeBeschreibung ? 'Stellenbeschreibung (Auszug): ' + safeBeschreibung : ''}
+${safeBeschreibung ? 'Stellenbeschreibung (Auszug): ' + safeBeschreibung : ''}${stilBlock}
 
 BEWERBER:
 Name: ${safeName || 'Max Mustermann'}
 Kurzprofil: ${safeKurz || 'IT-Fachkraft mit Linux-Schwerpunkt'}
-St\u00e4rken und Skills: ${safeStaerk || 'Linux, Docker, Support'}
+Staerken und Skills: ${safeStaerk || 'Linux, Docker, Support'}
 
 ANFORDERUNGEN:
-- Formelle deutsche Briefform
 - Kein Datum, keine Adresse
 - Beginne direkt mit "Sehr geehrte Damen und Herren,"
-- Drei Abs\u00e4tze: Einleitung, fachliche St\u00e4rken, Abschluss mit Gespr\u00e4chswunsch
-- Ende mit "Mit freundlichen Gr\u00fc\u00dfen" ohne Unterschrift
-- Maximal 250 W\u00f6rter
+- Drei Absaetze: Einleitung, fachliche Staerken, Abschluss mit Gespraechswunsch
+- Ende mit "Mit freundlichen Gruessen" ohne Unterschrift
 
 Schreibe NUR den Anschreiben-Text.`;
 
@@ -144,7 +153,7 @@ STELLE: ${safeStelle || 'nicht angegeben'}
 ANSCHREIBEN:
 ${safeAnschreiben}
 
-Bewerte auf einer Skala 1-10 und nenne 2-3 konkrete Verbesserungsvorschl\u00e4ge. Halte die Antwort unter 150 W\u00f6rtern.`;
+Bewerte auf einer Skala 1-10 und nenne 2-3 konkrete Verbesserungsvorschlaege. Halte die Antwort unter 150 Woertern.`;
 
   try {
     const result = await ollamaRequest(prompt);
