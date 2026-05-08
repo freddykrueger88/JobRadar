@@ -6,6 +6,22 @@ const api = async (url, method='GET', body=null) => {
   }
   return r.json();
 };
+
+/** fetch mit AbortController-Timeout */
+async function fetchWithTimeout(url, options={}, timeoutMs=90000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { ...options, signal: ctrl.signal });
+    clearTimeout(tid);
+    return r;
+  } catch(e) {
+    clearTimeout(tid);
+    if (e.name === 'AbortError') throw new Error('Timeout – Mistral hat zu lange gebraucht (>' + Math.round(timeoutMs/1000) + 's). Beim ersten Aufruf muss das Modell in den RAM geladen werden, das kann 30-60s dauern. Bitte nochmal versuchen.');
+    throw e;
+  }
+}
+
 const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const today = () => new Date().toISOString().slice(0,10);
@@ -21,7 +37,7 @@ function toast(msg, type='success') {
   el.style.background = type==='error'?'var(--error)':type==='warn'?'var(--warn)':'#1a1a1a';
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
 }
 window.toast = toast;
 
@@ -327,17 +343,22 @@ async function kiAnschreibenErzeugen(jobIndex) {
   if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
-  log('KI generiert Anschreiben f\u00fcr: ' + titel + ' bei ' + firma + ' \u2026');
+  log('KI generiert Anschreiben f\u00fcr: ' + titel + ' bei ' + firma + ' \u2026 (kann beim ersten Aufruf 30-60s dauern)');
+  toast('KI arbeitet \u2026 bitte warten (bis zu 60s)', 'warn');
   try {
-    const res = await fetch('/api/ki/anschreiben', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model}) });
+    const res = await fetchWithTimeout('/api/ki/anschreiben', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model})
+    }, 90000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler: '+data.error,'error'); log('Fehler: ' + data.error); return; }
     if (preview) preview.value = `Bewerbung als ${titel} bei ${firma}\n\n${data.text}`;
     if ($('letterSubject')) $('letterSubject').value = 'Bewerbung als ' + titel;
-    toast('KI-Anschreiben fertig');
+    toast('KI-Anschreiben fertig ✓');
     log('KI-Anschreiben fertig (' + (data.model||model) + ')');
     showTab('anschreiben');
-  } catch(e) { toast('KI-Fehler','error'); log('KI-Fehler: ' + e.message); }
+  } catch(e) { toast('KI-Fehler: '+e.message,'error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
 }
 window.kiAnschreibenErzeugen = kiAnschreibenErzeugen;
@@ -349,13 +370,18 @@ async function kiFeedback() {
   if (gen) gen.classList.add('active');
   if (box) { box.classList.remove('visible'); box.textContent = ''; }
   log('KI analysiert Anschreiben \u2026');
+  toast('KI analysiert \u2026 bitte warten', 'warn');
   try {
-    const res = await fetch('/api/ki/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({anschreiben:text,stelle:$('letterSubject')?.value||''}) });
+    const res = await fetchWithTimeout('/api/ki/feedback', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({anschreiben:text,stelle:$('letterSubject')?.value||''})
+    }, 90000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler','error'); log('Fehler: ' + data.error); return; }
     if (box) { box.textContent = data.feedback; box.classList.add('visible'); }
-    toast('KI-Feedback erhalten'); log('KI-Feedback erhalten.');
-  } catch(e) { toast('KI-Fehler','error'); log('KI-Fehler: ' + e.message); }
+    toast('KI-Feedback erhalten ✓'); log('KI-Feedback erhalten.');
+  } catch(e) { toast('KI-Fehler: '+e.message,'error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
 }
 
