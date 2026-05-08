@@ -85,8 +85,8 @@ docker compose up -d
 PORT=3000
 DB_PATH=./data/bewerbungen.sqlite
 
-# Ollama KI (lokal)
-OLLAMA_URL=http://192.168.178.x:11434
+# Ollama KI (lokal) — IP/Host deiner Ollama-Instanz eintragen
+OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=mistral
 
 # Adzuna (kostenlos — https://developer.adzuna.com)
