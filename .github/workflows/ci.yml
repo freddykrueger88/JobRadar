@@ -32,6 +32,14 @@ jobs:
           node --check src/routes/vorlagen.js
           node --check src/routes/profil.js
           node --check src/db/database.js
+          node --check src/middleware/errorHandler.js
+          node --check src/middleware/validate.js
+
+      - name: Tests ausführen
+        run: npm test
+        env:
+          DB_PATH: ':memory:'
+          NODE_ENV: test
 
       - name: Sicherheits-Audit
         run: npm audit --audit-level=high
