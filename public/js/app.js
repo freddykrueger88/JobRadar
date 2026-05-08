@@ -7,7 +7,6 @@ const api = async (url, method='GET', body=null) => {
   return r.json();
 };
 
-/** fetch mit AbortController-Timeout */
 async function fetchWithTimeout(url, options={}, timeoutMs=90000) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -17,7 +16,7 @@ async function fetchWithTimeout(url, options={}, timeoutMs=90000) {
     return r;
   } catch(e) {
     clearTimeout(tid);
-    if (e.name === 'AbortError') throw new Error('Timeout – Mistral hat zu lange gebraucht (>' + Math.round(timeoutMs/1000) + 's). Beim ersten Aufruf muss das Modell in den RAM geladen werden, das kann 30-60s dauern. Bitte nochmal versuchen.');
+    if (e.name === 'AbortError') throw new Error('Timeout – Mistral hat zu lange gebraucht (>' + Math.round(timeoutMs/1000) + 's). Beim Kaltstart bitte nochmal versuchen.');
     throw e;
   }
 }
@@ -28,12 +27,11 @@ const today = () => new Date().toISOString().slice(0,10);
 
 let state = { jobs:[], profil:{}, vorlagen:[], bewerbungen:[] };
 
-// ── Toast ──
 let toastTimer;
 function toast(msg, type='success') {
   const el = $('toast');
   if (!el) return;
-  el.textContent = (type==='success'?'✓ ':type==='error'?'✗ ':'') + msg;
+  el.textContent = (type==='success'?'\u2713 ':type==='error'?'\u2717 ':'') + msg;
   el.style.background = type==='error'?'var(--error)':type==='warn'?'var(--warn)':'#1a1a1a';
   el.classList.add('show');
   clearTimeout(toastTimer);
@@ -60,9 +58,7 @@ function showTab(id){
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
 
 function log(msg){ const l=$('log'); if(!l) return; const ts='['+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'] '; l.textContent=l.textContent?l.textContent+'\n\n'+ts+msg:ts+msg; l.scrollTop=l.scrollHeight; }
-
 function setLoading(active){ const bar=$('loadingBar'); const sp=$('searchSpinner'); if(bar) bar.style.width=active?'70%':'0'; if(sp) sp.classList.toggle('active',active); }
-
 function badge(status){ const L={beworben:'Beworben',interview:'Interview',angenommen:'Angenommen',abgelehnt:'Abgelehnt'}; return `<span class="badge badge-${esc(status||'beworben')}">${esc(L[status]||status||'beworben')}</span>`; }
 
 function scoreJob(j){
@@ -96,9 +92,7 @@ async function loadBewerbungen(){
     const firma=$('filterFirma')?.value||'';
     const archiviert=$('filterArchiv')?.value||'0';
     state.bewerbungen=await api('/api/bewerbungen?'+new URLSearchParams({status,firma,archiviert}));
-    renderBewerbungen();
-    loadStats();
-    checkFollowupNotifications();
+    renderBewerbungen(); loadStats(); checkFollowupNotifications();
   } catch(e) { log('Bewerbungen-Fehler: '+e.message); }
 }
 
@@ -162,7 +156,6 @@ async function loeschen(id, titel){
 }
 window.loeschen=loeschen;
 
-// ── Manuell hinzufügen Modal ──
 function manuellHinzufuegenModal(){
   const m = $('modalManuell');
   $('mTitel').value=''; $('mFirma').value=''; $('mOrt').value='';
@@ -195,19 +188,7 @@ async function manuellSpeichern(){
   } catch(e) { toast('Fehler: '+e.message,'error'); }
 }
 window.manuellSpeichern=manuellSpeichern;
-
-// Backdrop-Klick schliesst Modal
 $('modalManuell')?.addEventListener('click', e=>{ if(e.target.id==='modalManuell') $('modalManuell').style.display='none'; });
-
-async function manuellHinzufuegen(){
-  const titel=prompt('Stelle (z. B. IT Support):'); if(!titel) return;
-  const firma=prompt('Firma:'); if(!firma) return;
-  const status=prompt('Status (beworben / interview / angenommen / abgelehnt):','beworben')||'beworben';
-  try {
-    await api('/api/bewerbungen','POST',{titel,firma,status,beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10)});
-    loadBewerbungen(); toast('Gespeichert: '+titel); log('Manuell gespeichert: '+titel+' bei '+firma);
-  } catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
-}
 window.setStatus=setStatus; window.archivieren=archivieren;
 
 async function openTimeline(id){
@@ -262,17 +243,9 @@ async function suche(){
 function renderJobs(){
   const el=$('jobsList'); if(!el) return;
   if(!state.jobs.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">\uD83D\uDD0D</div><h3>Keine Treffer</h3><p>Passe deine Rollen im Profil an und starte eine neue Suche.</p></div>`; return; }
-  el.innerHTML=state.jobs.map((j,i)=>{ const match=getMatch(j.firma,j.titel); return `<article class="job"><div class="jobhead"><div><strong>${esc(j.titel)}</strong><div class="muted" style="margin-top:4px">${esc(j.firma)} \u00b7 ${esc(j.ort||'')} \u00b7 <em>${esc(j.quelle||'')}</em></div></div><div class="score">${j.score}%</div></div>${match?`<div style="margin-top:10px">${badge(match.status)} <span class="muted" style="font-size:14px">Bereits beworben</span></div>`:''}<div class="chips">${(j.tags||[]).slice(0,6).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div><div class="actions"><button class="btn primary small" onclick="kiAnschreibenErzeugen(${i})">&#x2728; KI-Anschreiben</button><button class="btn small" onclick="anschreibenErzeugen(${i})">Vorlage</button><button class="btn small" onclick="alsBeworben(${i})">Als beworben markieren</button>${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}</div></article>`; }).join('');
+  el.innerHTML=state.jobs.map((j,i)=>{ const match=getMatch(j.firma,j.titel); return `<article class="job"><div class="jobhead"><div><strong>${esc(j.titel)}</strong><div class="muted" style="margin-top:4px">${esc(j.firma)} \u00b7 ${esc(j.ort||'')} \u00b7 <em>${esc(j.quelle||'')}</em></div></div><div class="score">${j.score}%</div></div>${match?`<div style="margin-top:10px">${badge(match.status)} <span class="muted" style="font-size:14px">Bereits beworben</span></div>`:''}<div class="chips">${(j.tags||[]).slice(0,6).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div><div class="actions"><button class="btn primary small" onclick="kiAnschreibenErzeugen(${i})">&#x2728; KI-Anschreiben</button><button class="btn small" onclick="alsBeworben(${i})">Als beworben markieren</button>${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}</div></article>`; }).join('');
 }
 
-window.anschreibenErzeugen=(i)=>{
-  const j=state.jobs[i]; const p=state.profil;
-  const vorlagenSelect=$('vorlagenSelect'); const tplId=vorlagenSelect?parseInt(vorlagenSelect.value)||0:0;
-  const tpl=state.vorlagen.find(v=>v.id===tplId)||state.vorlagen[0]||{};
-  const text=`Bewerbung als ${j.titel}\n\nSehr geehrte Damen und Herren,\n\n${tpl.einleitung||''}\n\nIch bewerbe mich auf die Position ${j.titel} bei ${j.firma}. ${p.kurzprofil||''}\n\nBesonders relevant: ${p.staerken||''}. ${(j.tags||[]).length?'Ihre Themen ('+j.tags.slice(0,4).join(', ')+') passen sehr gut zu meinem Profil.':''}\n\n${tpl.schluss||''}\n\nMit freundlichen Gr\u00fc\u00dfen\n${p.name||''}`;
-  $('letterPreview').value=text; $('letterSubject').value='Bewerbung als '+j.titel;
-  showTab('anschreiben'); log('Anschreiben erzeugt: '+j.titel);
-};
 window.alsBeworben=async(i)=>{
   const j=state.jobs[i];
   if(getMatch(j.firma,j.titel)){toast('Bereits beworben bei '+j.firma,'warn');log('Hinweis: Bereits beworben bei '+j.firma);return;}
@@ -298,22 +271,63 @@ async function saveProfil(){
   } catch(e) { toast('Fehler','error'); log('Profil-Fehler: '+e.message); }
 }
 
+// ── KI-Stile (ehemals Vorlagen) ──
 async function loadVorlagen(){
   try {
-    state.vorlagen=await api('/api/vorlagen');
-    const el=$('vorlagenList');
-    if(el){
-      if(!state.vorlagen.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">\uD83D\uDCDD</div><h3>Keine Vorlagen</h3><p>Erstelle deine erste Vorlage.</p></div>`; }
-      else { el.innerHTML=state.vorlagen.map((v,i)=>`<div class="card"><strong>${esc(v.name)}</strong><div class="muted" style="margin-top:6px;font-size:14px">${esc((v.einleitung||'').slice(0,80))}\u2026</div><div class="actions"><button class="btn small" onclick="loadVorlage(${i})">Laden</button><button class="btn small" onclick="deleteVorlage(${v.id})">L\u00f6schen</button></div></div>`).join(''); }
+    state.vorlagen = await api('/api/vorlagen');
+    const el = $('vorlagenList');
+    if (el) {
+      if (!state.vorlagen.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">\uD83C\uDFA8</div><h3>Keine Stile</h3><p>Erstelle deinen ersten KI-Stil.</p></div>`;
+      } else {
+        const tonLabel = { formell:'Formell', modern:'Modern', kreativ:'Kreativ', kurz:'Kurz' };
+        const laengeLabel = { kurz:'~120 W', mittel:'~220 W', lang:'~350 W' };
+        el.innerHTML = state.vorlagen.map(v => `<div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>${esc(v.name)}</strong>
+            <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="deleteVorlage(${v.id})">\uD83D\uDDD1 L\u00f6schen</button>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <span class="chip">${esc(tonLabel[v.ton]||v.ton||'formell')}</span>
+            <span class="chip">${esc(laengeLabel[v.laenge]||v.laenge||'mittel')}</span>
+            <span class="chip">${esc(v.sprache||'deutsch')}</span>
+          </div>
+          ${v.hinweise?`<div class="muted" style="font-size:13px;margin-top:8px">${esc(v.hinweise.slice(0,100))}${v.hinweise.length>100?'\u2026':''}</div>`:''}
+        </div>`).join('');
+      }
     }
-    const sel=$('vorlagenSelect'); if(sel){ sel.innerHTML=state.vorlagen.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join(''); }
-  } catch(e) { log('Vorlagen-Fehler: '+e.message); }
+    // Stil-Dropdown im Anschreiben-Tab bef\u00fcllen
+    const sel = $('vorlagenSelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">Kein Stil (Standard)</option>' +
+        state.vorlagen.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join('');
+    }
+  } catch(e) { log('Stile-Fehler: '+e.message); }
 }
-window.loadVorlage=(i)=>{const v=state.vorlagen[i];$('vorlageName').value=v.name;$('vorlageEinleitung').value=v.einleitung;$('vorlageSchluss').value=v.schluss;};
-window.deleteVorlage=async(id)=>{ try{await api('/api/vorlagen/'+id,'DELETE');loadVorlagen();toast('Vorlage gelöscht');}catch(e){toast('Fehler','error');log('Fehler: '+e.message);} };
-async function saveVorlage(){
-  try { await api('/api/vorlagen','POST',{name:$('vorlageName').value,einleitung:$('vorlageEinleitung').value,schluss:$('vorlageSchluss').value}); loadVorlagen(); toast('Vorlage gespeichert'); log('Vorlage gespeichert.'); }
+
+window.deleteVorlage = async(id) => {
+  try { await api('/api/vorlagen/'+id,'DELETE'); loadVorlagen(); toast('Stil gel\u00f6scht'); }
   catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
+};
+
+async function saveVorlage(){
+  const name = $('vorlageName')?.value.trim();
+  if (!name) { toast('Name ist Pflichtfeld','error'); return; }
+  try {
+    await api('/api/vorlagen','POST',{
+      name,
+      ton: $('vorlageTon')?.value || 'formell',
+      sprache: $('vorlageSprache')?.value || 'deutsch',
+      laenge: $('vorlageLaenge')?.value || 'mittel',
+      hinweise: $('vorlageHinweise')?.value.trim() || ''
+    });
+    // Felder leeren
+    if($('vorlageName')) $('vorlageName').value='';
+    if($('vorlageHinweise')) $('vorlageHinweise').value='';
+    loadVorlagen();
+    toast('KI-Stil gespeichert \u2713');
+    log('KI-Stil gespeichert: '+name);
+  } catch(e) { toast('Fehler: '+e.message,'error'); log('Fehler: '+e.message); }
 }
 
 function exportPdf(){
@@ -340,23 +354,25 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const firma = j?.firma || '';
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
+  const stilId = $('vorlagenSelect')?.value ? parseInt($('vorlagenSelect').value) : null;
   if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
-  log('KI generiert Anschreiben f\u00fcr: ' + titel + ' bei ' + firma + ' \u2026 (kann beim ersten Aufruf 30-60s dauern)');
-  toast('KI arbeitet \u2026 bitte warten (bis zu 60s)', 'warn');
+  const stilName = stilId ? (state.vorlagen.find(v=>v.id===stilId)?.name || '') : '';
+  log('KI generiert Anschreiben f\u00fcr: ' + titel + (stilName?' [Stil: '+stilName+']':'') + ' \u2026');
+  toast('KI arbeitet \u2026 bitte warten (bis zu 2 Min beim Kaltstart)', 'warn');
   try {
     const res = await fetchWithTimeout('/api/ki/anschreiben', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model})
-    }, 90000);
+      body: JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model,stilId})
+    }, 195000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler: '+data.error,'error'); log('Fehler: ' + data.error); return; }
     if (preview) preview.value = `Bewerbung als ${titel} bei ${firma}\n\n${data.text}`;
     if ($('letterSubject')) $('letterSubject').value = 'Bewerbung als ' + titel;
-    toast('KI-Anschreiben fertig ✓');
-    log('KI-Anschreiben fertig (' + (data.model||model) + ')');
+    toast('KI-Anschreiben fertig \u2713');
+    log('KI-Anschreiben fertig (' + (data.model||model) + (stilName?' | Stil: '+stilName:'') + ')');
     showTab('anschreiben');
   } catch(e) { toast('KI-Fehler: '+e.message,'error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
@@ -376,11 +392,11 @@ async function kiFeedback() {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({anschreiben:text,stelle:$('letterSubject')?.value||''})
-    }, 90000);
+    }, 195000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler','error'); log('Fehler: ' + data.error); return; }
     if (box) { box.textContent = data.feedback; box.classList.add('visible'); }
-    toast('KI-Feedback erhalten ✓'); log('KI-Feedback erhalten.');
+    toast('KI-Feedback erhalten \u2713'); log('KI-Feedback erhalten.');
   } catch(e) { toast('KI-Fehler: '+e.message,'error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
 }
