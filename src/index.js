@@ -33,9 +33,10 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Statische Dateien (CSS, JS, Icons etc.)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Health-Check
+// API-Routen
 app.get('/health', async (req, res, next) => {
   try {
     const db = require('./db/database');
@@ -70,13 +71,8 @@ app.use('/api/vorlagen',    require('./routes/vorlagen'));
 app.use('/api/suche',       require('./routes/suche'));
 app.use('/api/ki',          require('./routes/ki'));
 
-// SPA-Fallback: alle nicht-API-Routen → index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// 404 + zentraler Error-Handler
+// 404 + zentraler Error-Handler (muessen ganz am Ende stehen)
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(PORT, () => console.log(`🎯 JobRadar läuft auf http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`JobRadar laeuft auf http://localhost:${PORT}`));
