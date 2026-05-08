@@ -104,6 +104,7 @@ function renderBewerbungen(){
         <button class="btn small" onclick="toggleEdit(${b.id})">&#9998; Bearbeiten</button>
         <button class="btn small" onclick="openTimeline(${b.id})">&#128203; Verlauf</button>
         <button class="btn small" onclick="archivieren(${b.id},${b.archiviert})">${b.archiviert?'Reaktivieren':'Archivieren'}</button>
+        <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="loeschen(${b.id},'${esc(b.titel)}')">&#x1F5D1; L\u00f6schen</button>
         ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}
       </div>
     </article>`;
@@ -125,6 +126,12 @@ async function archivieren(id,ist){
   try { await api('/api/bewerbungen/'+id,'PUT',{archiviert:ist?0:1}); loadBewerbungen(); }
   catch(e) { log('Archiv-Fehler: '+e.message); }
 }
+async function loeschen(id, titel){
+  if(!confirm('Bewerbung "'+titel+'" wirklich endg\u00fcltig l\u00f6schen?')) return;
+  try { await api('/api/bewerbungen/'+id,'DELETE'); loadBewerbungen(); log('Gel\u00f6scht: '+titel); }
+  catch(e) { log('Fehler beim L\u00f6schen: '+e.message); }
+}
+window.loeschen=loeschen;
 async function manuellHinzufuegen(){
   const titel=prompt('Stelle (z. B. IT Support):'); if(!titel) return;
   const firma=prompt('Firma:'); if(!firma) return;
@@ -170,7 +177,6 @@ async function suche(){
   const profil=state.profil;
   const quelle=$('sucheQuelle')?.value||'all';
   const count=$('sucheCount')?.value||'15';
-  // Umkreissuche: Ort aus Suchfeld (Vorrang) oder Profil, plus Umkreis in km
   const ortInput=$('sucheOrt')?.value.trim();
   const ort=ortInput||profil.ort||'Remote';
   const umkreis=$('sucheUmkreis')?.value||'0';
