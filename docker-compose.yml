@@ -2,8 +2,7 @@ services:
   jobradar:
     build: .
     ports:
-      # Nur auf localhost binden – kein direkter LAN-Zugriff
-      - "127.0.0.1:3000:3000"
+      - "0.0.0.0:3000:3000"
     volumes:
       - ./data:/app/data
     env_file:
