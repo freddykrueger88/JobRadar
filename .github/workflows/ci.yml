@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Syntax-Check
+        run: |
+          node --check src/index.js
+          node --check src/routes/bewerbungen.js
+          node --check src/routes/ki.js
+          node --check src/routes/suche.js
+          node --check src/routes/vorlagen.js
+          node --check src/routes/profil.js
+          node --check src/db/database.js
+
+      - name: Sicherheits-Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
