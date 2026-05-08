@@ -17,8 +17,15 @@ document.addEventListener('DOMContentLoaded',()=>{ setTheme(localStorage.getItem
 document.addEventListener('click',e=>{ if(e.target.id==='themeBtn') setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); });
 
 function showTab(id){
-  document.querySelectorAll('.tab,.tabpanel').forEach(el=>el.classList.remove('active'));
+  // Alle Buttons und Panels deaktivieren
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(el=>el.classList.remove('active'));
+  // Richtigen Button aktivieren
   document.querySelectorAll('[data-tab="'+id+'"]').forEach(el=>el.classList.add('active'));
+  // Richtiges Panel aktivieren (per ID)
+  const panel = $(id);
+  if(panel) panel.classList.add('active');
+  // Daten laden
   if(id==='dashboard') loadStats();
   if(id==='verlauf') loadBewerbungen();
   if(id==='vorlagen') loadVorlagen();
