@@ -1,12 +1,21 @@
 # 🎯 JobRadar
 
-> Dein persönlicher Bewerbungs-Assistent mit KI-Anschreiben, 7 Jobquellen und vollständigem Bewerbungs-Tracking.
+<p align="center">
+  <img src="https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/f0c46642-409b-49bb-81e9-51f2306959d5.png" alt="JobRadar Logo" width="220"/>
+</p>
 
-![Node.js](https://img.shields.io/badge/Node.js-18+-green?logo=node.js)
-![SQLite](https://img.shields.io/badge/Datenbank-SQLite-blue?logo=sqlite)
-![Ollama](https://img.shields.io/badge/KI-Ollama%20lokal-orange)
-![PWA](https://img.shields.io/badge/PWA-installierbar-purple)
-![License](https://img.shields.io/badge/Lizenz-MIT-lightgrey)
+<p align="center">
+  <strong>Dein persönlicher KI-Bewerbungsassistent</strong><br/>
+  Mit 7 Jobquellen, KI-Anschreiben und vollständigem Bewerbungs-Tracking.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-green?logo=node.js" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Datenbank-SQLite-blue?logo=sqlite" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/KI-Ollama%20lokal-orange" alt="Ollama"/>
+  <img src="https://img.shields.io/badge/PWA-installierbar-purple" alt="PWA"/>
+  <img src="https://img.shields.io/badge/Lizenz-MIT-lightgrey" alt="License"/>
+</p>
 
 ---
 
