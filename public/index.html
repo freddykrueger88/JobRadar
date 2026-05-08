@@ -104,7 +104,7 @@
         </div>
       </div>
       <div class="footerbar">
-        <button class="btn" onclick="manuellHinzufuegen()">+ Manuell hinzufügen</button>
+        <button class="btn primary" onclick="manuellHinzufuegenModal()">+ Manuell hinzufügen</button>
         <a class="btn" href="/api/bewerbungen/export/csv" download>CSV Export</a>
       </div>
     </div>
@@ -136,7 +136,7 @@
         <div class="footerbar">
           <button class="btn primary" onclick="exportPdf()">Als PDF exportieren</button>
           <button class="btn" onclick="sendMail()">✉ Als E-Mail öffnen</button>
-          <button class="btn" onclick="navigator.clipboard.writeText($('letterPreview').value).then(()=>log('Kopiert.'))">Kopieren</button>
+          <button class="btn" onclick="navigator.clipboard.writeText($('letterPreview').value).then(()=>toast('Kopiert ✓'))">Kopieren</button>
         </div>
       </div>
     </div>
@@ -182,6 +182,45 @@
     </div>
   </div>
 </div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Modal: Manuell hinzufügen -->
+<div id="modalManuell" class="modal-backdrop" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="document.getElementById('modalManuell').style.display='none'">&#x2715;</button>
+    <h2>Bewerbung hinzufügen</h2>
+    <div class="stack" style="margin-top:16px">
+      <div class="row">
+        <div><label>Stelle / Titel *</label><input id="mTitel" placeholder="z. B. IT Support Specialist"></div>
+        <div><label>Firma *</label><input id="mFirma" placeholder="z. B. Beispiel GmbH"></div>
+      </div>
+      <div class="row">
+        <div><label>Ort</label><input id="mOrt" placeholder="z. B. Bremen, Remote"></div>
+        <div><label>Status</label>
+          <select id="mStatus">
+            <option value="beworben">Beworben</option>
+            <option value="interview">Interview</option>
+            <option value="angenommen">Angenommen</option>
+            <option value="abgelehnt">Abgelehnt</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Beworben am</label><input id="mBeworbenAm" type="date"></div>
+        <div><label>Follow-up</label><input id="mFollowup" type="date"></div>
+      </div>
+      <div><label>Stellenlink (URL)</label><input id="mUrl" type="url" placeholder="https://…"></div>
+      <div><label>Notizen</label><textarea id="mNotizen" rows="3" placeholder="Ansprechpartner, Gehalt, Eindrücke…"></textarea></div>
+      <div class="footerbar">
+        <button class="btn primary" onclick="manuellSpeichern()">✓ Speichern</button>
+        <button class="btn" onclick="document.getElementById('modalManuell').style.display='none'">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/js/app.js"></script>
 </body>
 </html>

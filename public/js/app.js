@@ -12,6 +12,19 @@ const today = () => new Date().toISOString().slice(0,10);
 
 let state = { jobs:[], profil:{}, vorlagen:[], bewerbungen:[] };
 
+// ── Toast ──
+let toastTimer;
+function toast(msg, type='success') {
+  const el = $('toast');
+  if (!el) return;
+  el.textContent = (type==='success'?'✓ ':type==='error'?'✗ ':'') + msg;
+  el.style.background = type==='error'?'var(--error)':type==='warn'?'var(--warn)':'#1a1a1a';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+window.toast = toast;
+
 function setTheme(t){ document.documentElement.dataset.theme=t; localStorage.setItem('theme',t); $('themeBtn').textContent=t==='dark'?'Light Mode':'Dark Mode'; }
 document.addEventListener('DOMContentLoaded',()=>{ setTheme(localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')); init(); });
 document.addEventListener('click',e=>{ if(e.target.id==='themeBtn') setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); });
@@ -115,31 +128,69 @@ window.toggleEdit=(id)=>{ const el=$('edit-'+id); if(el) el.classList.toggle('op
 window.saveInlineEdit=async(id)=>{
   try {
     await api('/api/bewerbungen/'+id,'PUT',{notizen:$('notiz-'+id)?.value||'',followup_datum:$('followup-'+id)?.value||'',bewertung:$('bewertung-'+id)?.value?parseInt($('bewertung-'+id).value):null});
-    loadBewerbungen(); log('Gespeichert.');
-  } catch(e) { log('Fehler beim Speichern: '+e.message); }
+    loadBewerbungen(); toast('Gespeichert'); log('Gespeichert.');
+  } catch(e) { toast('Fehler beim Speichern','error'); log('Fehler: '+e.message); }
 };
 async function setStatus(id,status){
-  try { await api('/api/bewerbungen/'+id,'PUT',{status}); loadBewerbungen(); log('Status \u2192 '+status); }
-  catch(e) { log('Status-Fehler: '+e.message); }
+  try { await api('/api/bewerbungen/'+id,'PUT',{status}); loadBewerbungen(); toast('Status \u2192 '+status); log('Status \u2192 '+status); }
+  catch(e) { toast('Status-Fehler','error'); log('Status-Fehler: '+e.message); }
 }
 async function archivieren(id,ist){
-  try { await api('/api/bewerbungen/'+id,'PUT',{archiviert:ist?0:1}); loadBewerbungen(); }
-  catch(e) { log('Archiv-Fehler: '+e.message); }
+  try { await api('/api/bewerbungen/'+id,'PUT',{archiviert:ist?0:1}); loadBewerbungen(); toast(ist?'Reaktiviert':'Archiviert'); }
+  catch(e) { toast('Fehler','error'); log('Archiv-Fehler: '+e.message); }
 }
 async function loeschen(id, titel){
   if(!confirm('Bewerbung "'+titel+'" wirklich endg\u00fcltig l\u00f6schen?')) return;
-  try { await api('/api/bewerbungen/'+id,'DELETE'); loadBewerbungen(); log('Gel\u00f6scht: '+titel); }
-  catch(e) { log('Fehler beim L\u00f6schen: '+e.message); }
+  try { await api('/api/bewerbungen/'+id,'DELETE'); loadBewerbungen(); toast('Gel\u00f6scht'); log('Gel\u00f6scht: '+titel); }
+  catch(e) { toast('Fehler beim L\u00f6schen','error'); log('Fehler: '+e.message); }
 }
 window.loeschen=loeschen;
+
+// ── Manuell hinzufügen Modal ──
+function manuellHinzufuegenModal(){
+  const m = $('modalManuell');
+  $('mTitel').value=''; $('mFirma').value=''; $('mOrt').value='';
+  $('mStatus').value='beworben'; $('mUrl').value=''; $('mNotizen').value='';
+  $('mBeworbenAm').value=today();
+  $('mFollowup').value=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+  m.style.display='flex';
+  setTimeout(()=>$('mTitel').focus(),50);
+}
+window.manuellHinzufuegenModal=manuellHinzufuegenModal;
+
+async function manuellSpeichern(){
+  const titel=$('mTitel').value.trim();
+  const firma=$('mFirma').value.trim();
+  if(!titel||!firma){ toast('Titel und Firma sind Pflichtfelder','error'); return; }
+  try {
+    await api('/api/bewerbungen','POST',{
+      titel, firma,
+      ort:$('mOrt').value.trim(),
+      status:$('mStatus').value,
+      beworben_am:$('mBeworbenAm').value||today(),
+      followup_datum:$('mFollowup').value||'',
+      url:$('mUrl').value.trim(),
+      notizen:$('mNotizen').value.trim()
+    });
+    $('modalManuell').style.display='none';
+    loadBewerbungen();
+    toast('Bewerbung gespeichert \u2013 '+titel+' bei '+firma);
+    log('Manuell gespeichert: '+titel+' bei '+firma);
+  } catch(e) { toast('Fehler: '+e.message,'error'); }
+}
+window.manuellSpeichern=manuellSpeichern;
+
+// Backdrop-Klick schliesst Modal
+$('modalManuell')?.addEventListener('click', e=>{ if(e.target.id==='modalManuell') $('modalManuell').style.display='none'; });
+
 async function manuellHinzufuegen(){
   const titel=prompt('Stelle (z. B. IT Support):'); if(!titel) return;
   const firma=prompt('Firma:'); if(!firma) return;
   const status=prompt('Status (beworben / interview / angenommen / abgelehnt):','beworben')||'beworben';
   try {
     await api('/api/bewerbungen','POST',{titel,firma,status,beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10)});
-    loadBewerbungen(); log('Manuell gespeichert: '+titel+' bei '+firma);
-  } catch(e) { log('Fehler: '+e.message); }
+    loadBewerbungen(); toast('Gespeichert: '+titel); log('Manuell gespeichert: '+titel+' bei '+firma);
+  } catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
 }
 window.setStatus=setStatus; window.archivieren=archivieren;
 
@@ -208,12 +259,12 @@ window.anschreibenErzeugen=(i)=>{
 };
 window.alsBeworben=async(i)=>{
   const j=state.jobs[i];
-  if(getMatch(j.firma,j.titel)){log('Hinweis: Bereits beworben bei '+j.firma);return;}
+  if(getMatch(j.firma,j.titel)){toast('Bereits beworben bei '+j.firma,'warn');log('Hinweis: Bereits beworben bei '+j.firma);return;}
   try {
     await api('/api/bewerbungen','POST',{titel:j.titel,firma:j.firma,ort:j.ort||'',quelle:j.quelle||'',url:j.url||'',beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10),status:'beworben'});
-    await loadBewerbungen(); renderJobs(); log('Beworben gespeichert: '+j.titel);
+    await loadBewerbungen(); renderJobs(); toast('Beworben: '+j.titel); log('Beworben gespeichert: '+j.titel);
     if(Notification.permission!=='granted') requestNotifications();
-  } catch(e) { log('Fehler: '+e.message); }
+  } catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
 };
 
 async function loadProfil(){
@@ -226,8 +277,9 @@ async function loadProfil(){
 async function saveProfil(){
   try {
     const body={}; ['name','email','rollen','ort','keywords','blacklist','kurzprofil','staerken'].forEach(k=>{const el=$(k);if(el) body[k]=el.value;});
-    await api('/api/profil','PUT',body); state.profil={...state.profil,...body}; log('Profil gespeichert.');
-  } catch(e) { log('Profil-Fehler: '+e.message); }
+    await api('/api/profil','PUT',body); state.profil={...state.profil,...body};
+    toast('Profil gespeichert'); log('Profil gespeichert.');
+  } catch(e) { toast('Fehler','error'); log('Profil-Fehler: '+e.message); }
 }
 
 async function loadVorlagen(){
@@ -242,10 +294,10 @@ async function loadVorlagen(){
   } catch(e) { log('Vorlagen-Fehler: '+e.message); }
 }
 window.loadVorlage=(i)=>{const v=state.vorlagen[i];$('vorlageName').value=v.name;$('vorlageEinleitung').value=v.einleitung;$('vorlageSchluss').value=v.schluss;};
-window.deleteVorlage=async(id)=>{ try{await api('/api/vorlagen/'+id,'DELETE');loadVorlagen();}catch(e){log('Fehler: '+e.message);} };
+window.deleteVorlage=async(id)=>{ try{await api('/api/vorlagen/'+id,'DELETE');loadVorlagen();toast('Vorlage gelöscht');}catch(e){toast('Fehler','error');log('Fehler: '+e.message);} };
 async function saveVorlage(){
-  try { await api('/api/vorlagen','POST',{name:$('vorlageName').value,einleitung:$('vorlageEinleitung').value,schluss:$('vorlageSchluss').value}); loadVorlagen(); log('Vorlage gespeichert.'); }
-  catch(e) { log('Fehler: '+e.message); }
+  try { await api('/api/vorlagen','POST',{name:$('vorlageName').value,einleitung:$('vorlageEinleitung').value,schluss:$('vorlageSchluss').value}); loadVorlagen(); toast('Vorlage gespeichert'); log('Vorlage gespeichert.'); }
+  catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
 }
 
 function exportPdf(){
@@ -272,26 +324,27 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const firma = j?.firma || '';
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
-  if (!titel) { log('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen.'); return; }
+  if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
   log('KI generiert Anschreiben f\u00fcr: ' + titel + ' bei ' + firma + ' \u2026');
   try {
     const res = await fetch('/api/ki/anschreiben', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model}) });
     const data = await res.json();
-    if (data.error) { log('Fehler: ' + data.error); return; }
+    if (data.error) { toast('KI-Fehler: '+data.error,'error'); log('Fehler: ' + data.error); return; }
     if (preview) preview.value = `Bewerbung als ${titel} bei ${firma}\n\n${data.text}`;
     if ($('letterSubject')) $('letterSubject').value = 'Bewerbung als ' + titel;
+    toast('KI-Anschreiben fertig');
     log('KI-Anschreiben fertig (' + (data.model||model) + ')');
     showTab('anschreiben');
-  } catch(e) { log('KI-Fehler: ' + e.message); }
+  } catch(e) { toast('KI-Fehler','error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
 }
 window.kiAnschreibenErzeugen = kiAnschreibenErzeugen;
 
 async function kiFeedback() {
   const text = $('letterPreview')?.value || '';
-  if (!text.trim()) { log('Kein Anschreiben vorhanden.'); return; }
+  if (!text.trim()) { toast('Kein Anschreiben vorhanden','warn'); return; }
   const box = $('feedbackBox'); const gen = $('kiGenerating');
   if (gen) gen.classList.add('active');
   if (box) { box.classList.remove('visible'); box.textContent = ''; }
@@ -299,10 +352,10 @@ async function kiFeedback() {
   try {
     const res = await fetch('/api/ki/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({anschreiben:text,stelle:$('letterSubject')?.value||''}) });
     const data = await res.json();
-    if (data.error) { log('Fehler: ' + data.error); return; }
+    if (data.error) { toast('KI-Fehler','error'); log('Fehler: ' + data.error); return; }
     if (box) { box.textContent = data.feedback; box.classList.add('visible'); }
-    log('KI-Feedback erhalten.');
-  } catch(e) { log('KI-Fehler: ' + e.message); }
+    toast('KI-Feedback erhalten'); log('KI-Feedback erhalten.');
+  } catch(e) { toast('KI-Fehler','error'); log('KI-Fehler: ' + e.message); }
   finally { if (gen) gen.classList.remove('active'); }
 }
 
