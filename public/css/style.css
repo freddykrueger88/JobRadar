@@ -20,11 +20,47 @@ body{font-family:system-ui,sans-serif;background:var(--surface2);color:var(--tex
 .num{font-size:32px;font-weight:700;color:var(--primary)}
 .lbl{font-size:13px;color:var(--muted);margin-top:4px}
 .log{font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:180px;overflow-y:auto;color:var(--muted);background:var(--surface2);padding:12px;border-radius:10px;min-height:48px}
-.btn{padding:8px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;font-weight:500;transition:.15s;white-space:nowrap}
-.btn:hover{border-color:var(--primary);color:var(--primary)}
-.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-.btn.primary:hover{background:var(--primary-hover)}
-.btn.small{padding:5px 11px;font-size:13px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:8px 16px;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  color:var(--text);
+  box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  transition:transform .15s,box-shadow .15s,background .15s,border-color .15s,color .15s;
+  white-space:nowrap;
+  user-select:none;
+}
+.btn:hover{
+  background:var(--surface2);
+  border-color:var(--primary);
+  color:var(--primary);
+  transform:translateY(-2px);
+  box-shadow:0 4px 10px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);
+}
+.btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.btn.primary{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+  box-shadow:0 2px 6px rgba(1,105,111,.35);
+}
+.btn.primary:hover{
+  background:var(--primary-hover);
+  border-color:var(--primary-hover);
+  color:#fff;
+  box-shadow:0 6px 14px rgba(1,105,111,.4);
+}
+.btn.small{padding:5px 12px;font-size:13px;}
+[data-theme=dark] .btn{box-shadow:0 1px 3px rgba(0,0,0,.3);}
+[data-theme=dark] .btn:hover{background:#2e2e2e;box-shadow:0 4px 10px rgba(0,0,0,.4);}
+
 label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--muted)}
 input,select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface);color:var(--text);outline:none;transition:.15s;font-family:inherit}
 input:focus,select:focus,textarea:focus{border-color:var(--primary)}
