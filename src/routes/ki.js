@@ -5,18 +5,18 @@ const { validate } = require('../middleware/validate');
 const https = require('https');
 const http = require('http');
 
-// Kein hardcodierter privater IP-Fallback – localhost ist der sichere Default
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral';
 
-// Maximale Laengen fuer Prompt-Felder (Schutz gegen Prompt Injection & Ueberlasten)
+// Kaltstart Mistral 7B braucht bis zu 120s – daher 180s Timeout
+const OLLAMA_TIMEOUT_MS = 180000;
+
 const MAX_TITEL = 200;
 const MAX_FIRMA = 200;
 const MAX_BESCHREIBUNG = 500;
 const MAX_PROFIL_FELD = 300;
 const MAX_ANSCHREIBEN = 3000;
 
-/** Bereinigt einen String fuer sicheren Prompt-Einsatz */
 function sanitizePromptField(val, maxLen) {
   return String(val || '').replace(/[\n\r`]/g, ' ').trim().slice(0, maxLen);
 }
@@ -46,7 +46,10 @@ function ollamaRequest(prompt) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(60000, () => { req.destroy(); reject(new Error('Ollama Timeout nach 60s')); });
+    req.setTimeout(OLLAMA_TIMEOUT_MS, () => {
+      req.destroy();
+      reject(new Error('Ollama Timeout nach ' + (OLLAMA_TIMEOUT_MS/1000) + 's – beim Kaltstart bitte nochmal versuchen'));
+    });
     req.write(body);
     req.end();
   });
@@ -71,7 +74,6 @@ router.get('/models', async (req, res) => {
   }
 });
 
-// Validierungsregeln fuer /anschreiben
 const anschreibenValidator = [
   body('titel').trim().notEmpty().isLength({ max: MAX_TITEL }),
   body('firma').trim().notEmpty().isLength({ max: MAX_FIRMA }),
@@ -85,7 +87,6 @@ const anschreibenValidator = [
 router.post('/anschreiben', anschreibenValidator, validate, async (req, res) => {
   const { titel, firma, ort, beschreibung, tags, profil } = req.body;
 
-  // Alle Felder sanitizen bevor sie in den Prompt kommen
   const safeTitel = sanitizePromptField(titel, MAX_TITEL);
   const safeFirma = sanitizePromptField(firma, MAX_FIRMA);
   const safeOrt   = sanitizePromptField(ort, 200);
@@ -95,7 +96,7 @@ router.post('/anschreiben', anschreibenValidator, validate, async (req, res) => 
   const safeKurz   = sanitizePromptField(profil?.kurzprofil, MAX_PROFIL_FELD);
   const safeStaerk = sanitizePromptField(profil?.staerken, MAX_PROFIL_FELD);
 
-  const prompt = `Du bist ein professioneller Bewerbungsberater. Schreibe ein präzises deutsches Bewerbungsanschreiben für folgende Stelle.
+  const prompt = `Du bist ein professioneller Bewerbungsberater. Schreibe ein pr\u00e4zises deutsches Bewerbungsanschreiben f\u00fcr folgende Stelle.
 
 STELLE:
 Titel: ${safeTitel}
@@ -107,15 +108,15 @@ ${safeBeschreibung ? 'Stellenbeschreibung (Auszug): ' + safeBeschreibung : ''}
 BEWERBER:
 Name: ${safeName || 'Max Mustermann'}
 Kurzprofil: ${safeKurz || 'IT-Fachkraft mit Linux-Schwerpunkt'}
-Stärken und Skills: ${safeStaerk || 'Linux, Docker, Support'}
+St\u00e4rken und Skills: ${safeStaerk || 'Linux, Docker, Support'}
 
 ANFORDERUNGEN:
 - Formelle deutsche Briefform
 - Kein Datum, keine Adresse
 - Beginne direkt mit "Sehr geehrte Damen und Herren,"
-- Drei Absätze: Einleitung, fachliche Stärken, Abschluss mit Gesprächswunsch
-- Ende mit "Mit freundlichen Grüßen" ohne Unterschrift
-- Maximal 250 Wörter
+- Drei Abs\u00e4tze: Einleitung, fachliche St\u00e4rken, Abschluss mit Gespr\u00e4chswunsch
+- Ende mit "Mit freundlichen Gr\u00fc\u00dfen" ohne Unterschrift
+- Maximal 250 W\u00f6rter
 
 Schreibe NUR den Anschreiben-Text.`;
 
@@ -127,7 +128,6 @@ Schreibe NUR den Anschreiben-Text.`;
   }
 });
 
-// Validierungsregeln fuer /feedback
 const feedbackValidator = [
   body('anschreiben').trim().notEmpty().isLength({ max: MAX_ANSCHREIBEN }),
   body('stelle').optional().trim().isLength({ max: 300 }),
@@ -144,7 +144,7 @@ STELLE: ${safeStelle || 'nicht angegeben'}
 ANSCHREIBEN:
 ${safeAnschreiben}
 
-Bewerte auf einer Skala 1-10 und nenne 2-3 konkrete Verbesserungsvorschläge. Halte die Antwort unter 150 Wörtern.`;
+Bewerte auf einer Skala 1-10 und nenne 2-3 konkrete Verbesserungsvorschl\u00e4ge. Halte die Antwort unter 150 W\u00f6rtern.`;
 
   try {
     const result = await ollamaRequest(prompt);
