@@ -112,6 +112,23 @@ ollama pull llama3.2
 curl http://localhost:11434/api/tags
 ```
 
+### 🏆 Warum Mistral das empfohlene Modell ist
+
+Für das Schreiben von Bewerbungsanschreiben auf Deutsch ist **Mistral 7B** die beste Wahl unter allen lokal ausführbaren Modellen:
+
+| Kriterium | Mistral 7B | Llama 3.2 (3B) | Phi-4 (14B) |
+|---|---|---|---|
+| **Deutsch** | ✅ Sehr gut | ⚠️ Mittelmäßig | ✅ Sehr gut |
+| **Formeller Stil** | ✅ Natürlich, präzise | ⚠️ Manchmal locker | ✅ Exzellent |
+| **Größe** | ✅ ~4 GB | ✅ ~2 GB | ⚠️ ~9 GB |
+| **Geschwindigkeit** | ✅ Schnell | ✅ Sehr schnell | ⚠️ Langsamer |
+| **RAM-Bedarf** | ✅ Ab 8 GB RAM | ✅ Ab 4 GB RAM | ⚠️ Ab 16 GB RAM |
+| **Anweisungen folgen** | ✅ Zuverlässig | ⚠️ Gelegentlich abweichend | ✅ Sehr zuverlässig |
+
+Mistral trifft den perfekten Mittelweg: Es ist **klein genug** um auf fast jedem Rechner flüssig zu laufen, aber **intelligent genug** um formelles Deutsch mit dem richtigen Ton für Bewerbungsanschreiben zu produzieren. Es hält sich zuverlässig an den vorgegebenen Prompt-Aufbau — also keine unnötigen Erklärungen, keine englischen Passagen, direkt ein fertiges Anschreiben.
+
+> **Tipp:** Wer mehr als 16 GB RAM hat, kann `phi4` ausprobieren — die Qualität ist noch etwas besser, braucht aber deutlich mehr Ressourcen.
+
 ---
 
 ## 📁 Projektstruktur
