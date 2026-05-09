@@ -1,6 +1,6 @@
 {
   "name": "jobradar",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Bewerbungs-Assistent mit KI-Anschreiben via Ollama",
   "main": "src/index.js",
   "scripts": {
@@ -15,7 +15,8 @@
     "express-rate-limit": "^7.2.0",
     "express-validator": "^7.0.1",
     "helmet": "^8.0.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.3",
