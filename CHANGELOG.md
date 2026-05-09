@@ -5,6 +5,30 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
+## [1.1.1] — 2026-05-10
+
+### 🔒 Sicherheit
+
+- **Path Traversal behoben** (`dokumente.js`, `vault.js`): Download-Endpunkte prüfen jetzt via `path.resolve()` + `startsWith()`, ob der angeforderte Dateipfad wirklich innerhalb des Upload-Verzeichnisses liegt. Manipulierte Dateinamen in der Datenbank können nicht mehr auf beliebige Systempfade zeigen.
+- **`helmet` hinzugefügt**: Alle HTTP-Responses erhalten jetzt automatisch sichere Security-Headers (Content-Security-Policy, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy u.à.).
+- **`/api/ki/models` auf localhost beschränkt**: Der Endpunkt, der installierte Ollama-Modelle auflistet, gibt außerhalb von localhost jetzt HTTP 403 zurück.
+- **`/health` und `/api/version` in Production versteckt**: Beide Endpunkte antworten bei `NODE_ENV=production` nur noch auf localhost-Anfragen.
+- **Input-Validierung in `bewerbungen.js` nachgezogen**: Alle Routen (GET, POST, PUT, DELETE, Kommentare) nutzen jetzt `express-validator` mit Feldlängen, Typ- und Format-Prüfungen (ISO8601-Datum, URL-Format, Integer-Bereiche).
+- **Input-Längenbegrenzung in `suche.js`**: Query-Parameter `rolle`, `ort`, `quelle`, `umkreis` werden jetzt gecapped – schützt vor Cache-Flooding-Angriffen.
+- **Explizites 400 bei unbekannter Suchquelle** (`suche.js`): Statt stillem Fehlverhalten gibt der Endpunkt jetzt einen validen Fehler zurück.
+- **API-Key-Konfigurationsstatus entfernt** (`suche.js`): `/api/suche/quellen` gibt nicht mehr preis, ob Adzuna/Jooble-Keys konfiguriert sind.
+- **Vault-DELETE-Fehler wird jetzt geloggt** (`vault.js`): Fehlgeschlagenes Löschen einer Datei wird via `console.warn` protokolliert statt still ignoriert.
+- **`SECURITY.md` hinzugefügt**: Responsible Disclosure Policy, DSGVO-Hinweise und Übersicht der implementierten Sicherheitsmaßnahmen.
+
+### 🔧 Technisch
+
+- `helmet ^8.0.0` als Produktions-Dependency hinzugefügt
+- `NODE_ENV=production` in `.env.example` dokumentiert
+- CI-Workflow aktualisiert: `actions/checkout@v4`, `actions/setup-node@v4`, `npm ci` statt `npm install`, npm-Cache aktiviert, Node-Matrix auf 20 + 22 erweitert, `dokumente.js` und `vault.js` in Syntax-Check aufgenommen, Audit-Level auf `moderate` erhöht
+- README zweisprachig (Deutsch + Englisch) neu geschrieben
+
+---
+
 ## [1.1.0] — 2026-05-09
 
 ### ✨ Hinzugefügt
