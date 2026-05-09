@@ -26,6 +26,7 @@
     <button class="tab" data-tab="verlauf">Verlauf</button>
     <button class="tab" data-tab="anschreiben">Anschreiben</button>
     <button class="tab" data-tab="vorlagen">KI-Stile</button>
+    <button class="tab" data-tab="erfahrungen">Erfahrungen</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
 
@@ -192,6 +193,67 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Erfahrungen -->
+  <div class="tabpanel" id="erfahrungen">
+    <div class="erfahrungen-layout">
+
+      <!-- Skills -->
+      <div class="card">
+        <h2>🛠 Skills &amp; Technologien</h2>
+        <p class="muted" style="font-size:14px;margin-bottom:16px">Die KI wählt automatisch passende Skills aus wenn sie zur Stelle passen.</p>
+        <div class="skill-add-row">
+          <input id="skillName" placeholder="z. B. Linux, Docker, Proxmox…" style="flex:1">
+          <select id="skillLevel">
+            <option value="Anfänger">Anfänger</option>
+            <option value="Fortgeschritten" selected>Fortgeschritten</option>
+            <option value="Experte">Experte</option>
+          </select>
+          <button class="btn primary" onclick="addSkill()">+ Hinzufügen</button>
+        </div>
+        <div id="skillsList" style="margin-top:16px"></div>
+      </div>
+
+      <!-- Berufsstationen -->
+      <div class="card">
+        <h2>🏢 Berufsstationen</h2>
+        <p class="muted" style="font-size:14px;margin-bottom:16px">Beschreibe deine Tätigkeiten – die KI zieht sich relevante Punkte für das Anschreiben heraus.</p>
+        <div class="stack">
+          <div class="row">
+            <div><label>Firma / Arbeitgeber</label><input id="stFirma" placeholder="z. B. Muster GmbH"></div>
+            <div><label>Rolle / Position</label><input id="stRolle" placeholder="z. B. IT-Techniker"></div>
+          </div>
+          <div class="row">
+            <div><label>Von</label><input id="stVon" type="month" placeholder="2021-01"></div>
+            <div><label>Bis (leer = aktuell)</label><input id="stBis" type="month" placeholder="2024-06"></div>
+          </div>
+          <div><label>Tätigkeiten &amp; Erfolge</label>
+            <textarea id="stTaetigkeiten" rows="4" placeholder="z. B.&#10;• Administration von 50 Linux-Servern (Debian, Ubuntu)&#10;• Einführung von Monitoring mit Zabbix&#10;• 2nd-Level-Support für 200 Mitarbeiter"></textarea>
+          </div>
+          <button class="btn primary" onclick="addStation()">+ Station hinzufügen</button>
+        </div>
+        <div id="stationenList" style="margin-top:20px"></div>
+      </div>
+
+      <!-- Ausbildung & Zertifikate -->
+      <div class="card">
+        <h2>🎓 Ausbildung &amp; Zertifikate</h2>
+        <div class="stack">
+          <div class="row">
+            <div><label>Titel / Abschluss</label><input id="zertTitel" placeholder="z. B. Fachinformatiker Systemintegration"></div>
+            <div><label>Jahr</label><input id="zertJahr" type="number" placeholder="2020" min="1970" max="2099"></div>
+          </div>
+          <div><label>Institution</label><input id="zertInstitution" placeholder="z. B. BBS Verden, Udemy, IHK…"></div>
+          <button class="btn primary" onclick="addZertifikat()">+ Hinzufügen</button>
+        </div>
+        <div id="zertifikateList" style="margin-top:16px"></div>
+      </div>
+
+    </div>
+    <div style="margin-top:20px;text-align:right">
+      <button class="btn primary" onclick="saveErfahrungen()">&#x1F4BE; Alle Erfahrungen speichern</button>
     </div>
   </div>
 
