@@ -500,12 +500,27 @@
         <div><label>Follow-up</label><input id="mFollowup" type="date"></div>
       </div>
       <div><label>Stellenlink (URL)</label><input id="mUrl" type="url" placeholder="https://…"></div>
+      <div>
+        <label>📄 Lebenslauf (CV-Vault)</label>
+        <select id="mVaultSelect" style="width:100%">
+          <option value="">— kein CV verknüpft —</option>
+        </select>
+      </div>
       <div><label>Notizen</label><textarea id="mNotizen" rows="3" placeholder="Ansprechpartner, Gehalt, Eindrücke…"></textarea></div>
       <div class="footerbar">
         <button class="btn primary" onclick="manuellSpeichern()">✓ Speichern</button>
         <button class="btn" onclick="document.getElementById('modalManuell').style.display='none'">Abbrechen</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal: Stellenanzeige-Snapshot -->
+<div id="modalSnapshot" class="modal-backdrop" style="display:none" onclick="if(event.target.id==='modalSnapshot') document.getElementById('modalSnapshot').style.display='none'">
+  <div class="modal" style="max-width:680px">
+    <button class="modal-close" onclick="document.getElementById('modalSnapshot').style.display='none'">&#x2715;</button>
+    <h2>📋 Stellenanzeige-Snapshot</h2>
+    <div id="snapshotContent" style="margin-top:16px;white-space:pre-wrap;font-size:14px;line-height:1.7;max-height:60vh;overflow-y:auto;padding:4px 0"></div>
   </div>
 </div>
 
