@@ -53,46 +53,58 @@ db.exec(`
     keywords TEXT, blacklist TEXT, kurzprofil TEXT, staerken TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS erfahrungen (
+    id INTEGER PRIMARY KEY,
+    skills TEXT DEFAULT '[]',
+    stationen TEXT DEFAULT '[]',
+    zertifikate TEXT DEFAULT '[]',
+    aktualisiert_am TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS anschreiben_verlauf (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titel TEXT,
+    firma TEXT,
+    text TEXT,
+    model TEXT,
+    stil TEXT,
+    erstellt_am TEXT DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_bew_status     ON bewerbungen(status);
   CREATE INDEX IF NOT EXISTS idx_bew_archiviert ON bewerbungen(archiviert);
   CREATE INDEX IF NOT EXISTS idx_bew_followup   ON bewerbungen(followup_datum);
   CREATE INDEX IF NOT EXISTS idx_komm_bew_id    ON kommentare(bewerbung_id);
 `);
 
-// Migration: neue Spalten zu vorlagen hinzufuegen falls nicht vorhanden
+// Migrationen
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN ton TEXT DEFAULT 'formell'`); } catch(e) {}
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN sprache TEXT DEFAULT 'deutsch'`); } catch(e) {}
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN laenge TEXT DEFAULT 'mittel'`); } catch(e) {}
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN hinweise TEXT`); } catch(e) {}
+// Anschreiben-Verlauf (falls DB schon existiert)
+try { db.exec(`CREATE TABLE IF NOT EXISTS anschreiben_verlauf (id INTEGER PRIMARY KEY AUTOINCREMENT, titel TEXT, firma TEXT, text TEXT, model TEXT, stil TEXT, erstellt_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
+// Erfahrungen (falls DB schon existiert)
+try { db.exec(`CREATE TABLE IF NOT EXISTS erfahrungen (id INTEGER PRIMARY KEY, skills TEXT DEFAULT '[]', stationen TEXT DEFAULT '[]', zertifikate TEXT DEFAULT '[]', aktualisiert_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
 
+// Standard-Vorlagen
 const count = db.prepare('SELECT COUNT(*) as c FROM vorlagen').get();
 if (count.c === 0) {
-  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
-    'Standard IT / Linux',
-    'formell',
-    'deutsch',
-    'mittel',
-    'Betone Linux-Kenntnisse, Docker und Troubleshooting. Zeige Begeisterung fuer Open Source.'
-  );
-  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
-    'Kurz & Praegnant',
-    'formell',
-    'deutsch',
-    'kurz',
-    'Halte das Anschreiben sehr knapp. Maximal 150 Woerter. Keine Floskeln.'
-  );
-  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run(
-    'Modern & Direkt',
-    'modern',
-    'deutsch',
-    'mittel',
-    'Moderner, direkter Stil ohne klassische Floskeln. Starte mit einem starken ersten Satz.'
-  );
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run('Standard IT / Linux', 'formell', 'deutsch', 'mittel', 'Betone Linux-Kenntnisse, Docker und Troubleshooting. Zeige Begeisterung fuer Open Source.');
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run('Kurz & Praegnant', 'formell', 'deutsch', 'kurz', 'Halte das Anschreiben sehr knapp. Maximal 150 Woerter. Keine Floskeln.');
+  db.prepare(`INSERT INTO vorlagen (name, ton, sprache, laenge, hinweise) VALUES (?, ?, ?, ?, ?)`).run('Modern & Direkt', 'modern', 'deutsch', 'mittel', 'Moderner, direkter Stil ohne klassische Floskeln. Starte mit einem starken ersten Satz.');
 }
 
+// Standard-Profil
 const profil = db.prepare('SELECT COUNT(*) as c FROM profil').get();
 if (profil.c === 0) {
   db.prepare(`INSERT INTO profil (id) VALUES (1)`).run();
+}
+
+// Standard-Erfahrungen
+const exp = db.prepare('SELECT COUNT(*) as c FROM erfahrungen').get();
+if (exp.c === 0) {
+  db.prepare(`INSERT INTO erfahrungen (id, skills, stationen, zertifikate) VALUES (1, '[]', '[]', '[]')`).run();
 }
 
 module.exports = db;
