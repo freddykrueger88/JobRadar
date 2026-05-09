@@ -82,9 +82,25 @@
           </select>
         </div>
       </div>
+      <!-- Ausblenden-Steuerung -->
+      <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;margin:0">
+          <input type="checkbox" id="toggleHidden" style="width:16px;height:16px;cursor:pointer">
+          Ausgeblendete anzeigen
+        </label>
+        <span id="hiddenHint" style="font-size:13px;color:var(--muted)"></span>
+      </div>
     </div>
     <div id="quellenStatus" style="margin-bottom:14px"></div>
     <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>
+
+    <!-- Ausgeblendete Liste -->
+    <details id="hiddenSection" style="margin-top:24px">
+      <summary style="cursor:pointer;font-weight:600;font-size:15px;padding:10px 0;user-select:none">🙈 Ausgeblendete Stellen verwalten</summary>
+      <div class="card" style="margin-top:10px">
+        <div id="hiddenList"><p class="muted" style="font-size:14px">Keine ausgeblendeten Stellen.</p></div>
+      </div>
+    </details>
   </div>
 
   <!-- Verlauf -->
@@ -199,8 +215,6 @@
   <!-- Erfahrungen -->
   <div class="tabpanel" id="erfahrungen">
     <div class="erfahrungen-layout">
-
-      <!-- Skills -->
       <div class="card">
         <h2>🛠 Skills &amp; Technologien</h2>
         <p class="muted" style="font-size:14px;margin-bottom:16px">Die KI wählt automatisch passende Skills aus wenn sie zur Stelle passen.</p>
@@ -215,8 +229,6 @@
         </div>
         <div id="skillsList" style="margin-top:16px"></div>
       </div>
-
-      <!-- Berufsstationen -->
       <div class="card">
         <h2>🏢 Berufsstationen</h2>
         <p class="muted" style="font-size:14px;margin-bottom:16px">Beschreibe deine Tätigkeiten – die KI zieht sich relevante Punkte für das Anschreiben heraus.</p>
@@ -226,18 +238,16 @@
             <div><label>Rolle / Position</label><input id="stRolle" placeholder="z. B. IT-Techniker"></div>
           </div>
           <div class="row">
-            <div><label>Von</label><input id="stVon" type="month" placeholder="2021-01"></div>
-            <div><label>Bis (leer = aktuell)</label><input id="stBis" type="month" placeholder="2024-06"></div>
+            <div><label>Von</label><input id="stVon" type="month"></div>
+            <div><label>Bis (leer = aktuell)</label><input id="stBis" type="month"></div>
           </div>
           <div><label>Tätigkeiten &amp; Erfolge</label>
-            <textarea id="stTaetigkeiten" rows="4" placeholder="z. B.&#10;• Administration von 50 Linux-Servern (Debian, Ubuntu)&#10;• Einführung von Monitoring mit Zabbix&#10;• 2nd-Level-Support für 200 Mitarbeiter"></textarea>
+            <textarea id="stTaetigkeiten" rows="4" placeholder="z. B.&#10;• Administration von 50 Linux-Servern&#10;• 2nd-Level-Support für 200 Mitarbeiter"></textarea>
           </div>
           <button class="btn primary" onclick="addStation()">+ Station hinzufügen</button>
         </div>
         <div id="stationenList" style="margin-top:20px"></div>
       </div>
-
-      <!-- Ausbildung & Zertifikate -->
       <div class="card">
         <h2>🎓 Ausbildung &amp; Zertifikate</h2>
         <div class="stack">
@@ -250,7 +260,6 @@
         </div>
         <div id="zertifikateList" style="margin-top:16px"></div>
       </div>
-
     </div>
     <div style="margin-top:20px;text-align:right">
       <button class="btn primary" onclick="saveErfahrungen()">&#x1F4BE; Alle Erfahrungen speichern</button>
