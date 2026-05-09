@@ -5,8 +5,17 @@ const path     = require('path');
 const fs       = require('fs');
 const db       = require('../db/database');
 
-const VAULT_DIR = process.env.VAULT_PATH || path.join(__dirname, '../../data/vault');
+const VAULT_DIR = path.resolve(process.env.VAULT_PATH || path.join(__dirname, '../../data/vault'));
 fs.mkdirSync(VAULT_DIR, { recursive: true });
+
+// ── Hilfsfunktion: Pfad-Traversal verhindern ────────────────────────────────
+function safePath(filename) {
+  const resolved = path.resolve(VAULT_DIR, path.basename(filename));
+  if (!resolved.startsWith(VAULT_DIR + path.sep) && resolved !== VAULT_DIR) {
+    return null;
+  }
+  return resolved;
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, VAULT_DIR),
@@ -48,7 +57,8 @@ router.post('/', upload.single('datei'), (req, res) => {
 router.get('/:id/download', (req, res) => {
   const row = db.prepare('SELECT * FROM lebenslauf_vault WHERE id=?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  const filePath = path.join(VAULT_DIR, row.dateiname);
+  const filePath = safePath(row.dateiname);
+  if (!filePath) return res.status(400).json({ error: 'Ungültiger Dateipfad.' });
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Datei fehlt' });
   res.download(filePath, row.originalname);
 });
@@ -57,7 +67,11 @@ router.get('/:id/download', (req, res) => {
 router.delete('/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM lebenslauf_vault WHERE id=?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  try { fs.unlinkSync(path.join(VAULT_DIR, row.dateiname)); } catch(e) {}
+  const filePath = safePath(row.dateiname);
+  if (filePath) {
+    try { fs.unlinkSync(filePath); }
+    catch (e) { console.warn(`[vault] Datei konnte nicht gelöscht werden: ${filePath} – ${e.message}`); }
+  }
   db.prepare('DELETE FROM lebenslauf_vault WHERE id=?').run(req.params.id);
   res.json({ ok: true });
 });

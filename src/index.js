@@ -2,11 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const { version, name } = require('../package.json');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === 'production';
+
+// ── Security Headers ──
+app.use(helmet());
 
 // ── Body-Parser ──
 app.use(express.json({ limit: '512kb' }));
@@ -36,8 +41,11 @@ app.use(express.static(path.join(__dirname, '../public'), {
   etag: true,
 }));
 
-// ── Health & Version ──
+// ── Health & Version (nur intern in Production) ──
 app.get('/health', (req, res) => {
+  if (isProd && req.hostname !== 'localhost' && req.hostname !== '127.0.0.1') {
+    return res.status(404).end();
+  }
   const db = require('./db/database');
   let dbOk = false;
   try { db.prepare('SELECT 1').get(); dbOk = true; } catch (e) { /* noop */ }
@@ -49,6 +57,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/version', (req, res) => {
+  if (isProd) return res.status(404).end();
   res.json({ name, version });
 });
 
