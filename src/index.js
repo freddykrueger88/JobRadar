@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { version, name } = require('../package.json');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,7 +61,8 @@ app.use('/api/ki',          require('./routes/ki'));
 app.use('/api/suche',       require('./routes/suche'));
 
 // ── Fehler-Handler ──
-app.use(require('./middleware/errorHandler'));
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // ── SPA-Fallback ──
 app.get('*', (req, res) => {
