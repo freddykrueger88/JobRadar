@@ -112,6 +112,7 @@ function showTab(id){
   if(id==='vorlagen') loadVorlagen();
   if(id==='erfahrungen') window.loadErfahrungen && window.loadErfahrungen();
   if(id==='profil') loadProfil();
+  if(id==='anschreiben-verlauf') loadAnschreibenVerlauf();
   if(id==='suche') { loadQuellenStatus(); renderHiddenList(); }
 }
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
@@ -120,12 +121,27 @@ function log(msg){ const l=$('log'); if(!l) return; const ts='['+new Date().toLo
 function setLoading(active){ const bar=$('loadingBar'); const sp=$('searchSpinner'); if(bar) bar.style.width=active?'70%':'0'; if(sp) sp.classList.toggle('active',active); }
 function badge(status){ const L={beworben:'Beworben',interview:'Interview',angenommen:'Angenommen',abgelehnt:'Abgelehnt'}; return `<span class="badge badge-${esc(status||'beworben')}">${esc(L[status]||status||'beworben')}</span>`; }
 
+// ── Score: Profil-Keywords + eigene Skills ──
 function scoreJob(j){
   const kw=(state.profil.keywords||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const bl=(state.profil.blacklist||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  // Skills aus erfahrungen.js (synchron aus Cache)
+  const mySkills = (typeof window.getSkillsForScore === 'function') ? window.getSkillsForScore() : [];
+  const allKw = [...new Set([...kw, ...mySkills])];
   const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.tags||[]).join(' ')).toLowerCase();
-  let s=40; kw.forEach(k=>{if(hay.includes(k))s+=10;}); bl.forEach(b=>{if(hay.includes(b))s-=25;}); if(j.remote) s+=8;
+  let s=40;
+  allKw.forEach(k=>{ if(hay.includes(k)) s+=10; });
+  bl.forEach(b=>{ if(hay.includes(b)) s-=25; });
+  if(j.remote) s+=8;
   return Math.max(0,Math.min(100,s));
+}
+
+// ── Blacklist: Jobs mit Score <= 0 direkt ausblenden ──
+function isBlacklisted(j){
+  const bl=(state.profil.blacklist||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  if(!bl.length) return false;
+  const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.tags||[]).join(' ')).toLowerCase();
+  return bl.some(b => hay.includes(b));
 }
 
 function getMatch(firma,titel){ return state.bewerbungen.find(b=>b.firma.toLowerCase().trim()===(firma||'').toLowerCase().trim()&&b.titel.toLowerCase().trim()===(titel||'').toLowerCase().trim())||state.bewerbungen.find(b=>b.firma.toLowerCase().trim()===(firma||'').toLowerCase().trim()); }
@@ -293,13 +309,17 @@ async function suche(){
     const data=await api('/api/suche?'+new URLSearchParams({quelle,rolle:profil.rollen||'Linux Administrator',ort,count,umkreis}));
     if((data.errors||[]).length) data.errors.forEach(e=>log('Fehler: '+e));
     const rollen=(profil.rollen||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-    state.jobs=(data.results||[]).filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); }).map(j=>({...j,score:scoreJob(j)})).sort((a,b)=>b.score-a.score).slice(0,parseInt(count,10)||15);
+    state.jobs=(data.results||[])
+      .filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); })
+      .filter(j => !isBlacklisted(j))  // Blacklist-Filter: direkt ausblenden
+      .map(j=>({...j,score:scoreJob(j)}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,parseInt(count,10)||15);
     renderJobs(); renderHiddenList(); log(state.jobs.length+' Treffer nach Filter.');
   }catch(e){ log('Fehler bei Suche: '+e.message); }
   setLoading(false);
 }
 
-// Ausblend-Gründe
 const HIDE_GRUENDE = [
   'Ausbildung / Lehrstelle',
   'Studium erforderlich',
@@ -317,19 +337,15 @@ function renderJobs(){
   const showHidden = $('toggleHidden')?.checked;
   const visible = state.jobs.filter(j => showHidden || !map[jobKey(j)]);
   const hiddenCount = state.jobs.filter(j => map[jobKey(j)]).length;
-
-  // Zähler-Hinweis
   const hint = $('hiddenHint');
   if (hint) hint.textContent = hiddenCount > 0 ? hiddenCount + ' Stelle' + (hiddenCount>1?'n':'') + ' ausgeblendet' : '';
-
   if(!visible.length){
     el.innerHTML = hiddenCount
       ? `<div class="empty"><div class="empty-icon">🙈</div><h3>${hiddenCount} Stelle${hiddenCount>1?'n':''} ausgeblendet</h3><p>Aktiviere "Ausgeblendete anzeigen" um sie wieder zu sehen.</p></div>`
       : `<div class="empty"><div class="empty-icon">\uD83D\uDD0D</div><h3>Keine Treffer</h3><p>Passe deine Rollen im Profil an und starte eine neue Suche.</p></div>`;
     return;
   }
-
-  el.innerHTML = visible.map((j,vi) => {
+  el.innerHTML = visible.map((j) => {
     const origIdx = state.jobs.indexOf(j);
     const isHidden = !!map[jobKey(j)];
     const match = getMatch(j.firma, j.titel);
@@ -357,7 +373,7 @@ function renderJobs(){
             <button class="btn small" style="color:var(--muted);border-color:var(--muted)" onclick="hideJob(${origIdx}, document.getElementById('hideGrund-${origIdx}').value)">🙈 Ausblenden</button>
           </div>
         ` : `
-          <button class="btn small" onclick="unhideJob('${esc(jobKey(j))}')">👁 Wieder einblenden</button>
+          <button class="btn small" onclick="unhideJob('${esc(jobKey(j))}')">&#128065; Wieder einblenden</button>
         `}
         ${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
       </div>
@@ -390,7 +406,6 @@ async function saveProfil(){
   } catch(e) { toast('Fehler','error'); log('Profil-Fehler: '+e.message); }
 }
 
-// ── KI-Stile ──
 async function loadVorlagen(){
   try {
     state.vorlagen = await api('/api/vorlagen');
@@ -472,7 +487,8 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
   const stilId = $('vorlagenSelect')?.value ? parseInt($('vorlagenSelect').value) : null;
-  const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function') ? window.getErfahrungenKontext() : '';
+  // async: erfahrungenKontext aus DB
+  const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function') ? await window.getErfahrungenKontext() : '';
   if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche wählen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
@@ -518,6 +534,56 @@ async function kiFeedback() {
   finally { if (gen) gen.classList.remove('active'); }
 }
 
+// ── Anschreiben-Verlauf ──
+async function loadAnschreibenVerlauf() {
+  const el = $('anschreibenVerlaufList'); if (!el) return;
+  el.innerHTML = '<p class="muted">Lade...</p>';
+  try {
+    const list = await api('/api/ki/verlauf');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><h3>Noch kein Verlauf</h3><p>Generierte Anschreiben werden hier gespeichert.</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(v => `
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div>
+            <strong>${esc(v.titel)}</strong>
+            <span class="muted" style="font-size:13px"> · ${esc(v.firma||'')}${v.stil?' · <em>'+esc(v.stil)+'</em>':''}</span>
+            <div class="muted" style="font-size:12px;margin-top:2px">${esc(v.erstellt_am?.slice(0,16)||'')} · <em>${esc(v.model||'')}</em></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn small" onclick="verlaufLaden(${v.id})">Laden</button>
+            <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="verlaufLoeschen(${v.id})">&#x1F5D1;</button>
+          </div>
+        </div>
+        <div class="muted" style="font-size:13px;margin-top:10px;white-space:pre-wrap">${esc((v.text||'').slice(0,180))}${(v.text||'').length>180?'\u2026':''}</div>
+      </div>`
+    ).join('');
+  } catch(e) { el.innerHTML = '<p class="muted">Fehler beim Laden.</p>'; }
+}
+
+window.verlaufLaden = async function(id) {
+  try {
+    const list = await api('/api/ki/verlauf');
+    const v = list.find(x => x.id === id);
+    if (!v) return;
+    if ($('letterPreview')) $('letterPreview').value = v.text;
+    if ($('letterSubject')) $('letterSubject').value = 'Bewerbung als ' + v.titel;
+    showTab('anschreiben');
+    toast('Anschreiben geladen \u2713');
+  } catch(e) { toast('Fehler beim Laden','error'); }
+};
+
+window.verlaufLoeschen = async function(id) {
+  if (!confirm('Eintrag löschen?')) return;
+  try {
+    await api('/api/ki/verlauf/'+id,'DELETE');
+    loadAnschreibenVerlauf();
+    toast('Gelöscht');
+  } catch(e) { toast('Fehler','error'); }
+};
+
 async function loadQuellenStatus() {
   try {
     const quellen = await api('/api/suche/quellen');
@@ -537,6 +603,8 @@ async function init(){
   await loadVorlagen();
   await loadBewerbungen();
   await loadStats();
+  // Erfahrungen vorladen damit Score sofort korrekt ist
+  if (typeof window.loadErfahrungen === 'function') window.loadErfahrungen();
   $('filterStatus')?.addEventListener('change', loadBewerbungen);
   $('filterArchiv')?.addEventListener('change', loadBewerbungen);
   $('filterFirma')?.addEventListener('input', loadBewerbungen);
