@@ -13,6 +13,7 @@
   border:1px solid var(--border);
   border-radius:var(--r);
   overflow:hidden;
+  transition:box-shadow .3s;
 }
 .kanban-col-header{
   display:flex;
@@ -49,9 +50,12 @@
   border:1.5px solid var(--border);
   border-radius:12px;
   padding:12px;
-  transition:.15s;
+  transition:border-color .15s, box-shadow .15s, transform .15s;
 }
-.kanban-card:hover{border-color:var(--primary);}
+.kanban-card:hover{
+  border-color:var(--primary);
+  transform:translateY(-1px);
+}
 .kanban-overdue{border-color:var(--error)!important;}
 .kanban-card-title{font-weight:600;font-size:14px;margin-bottom:3px;}
 .kanban-card-firma{font-size:12px;}
@@ -63,18 +67,124 @@
   gap:6px;
 }
 .kanban-card-actions .btn.small{padding:3px 10px;font-size:13px;}
-[data-theme=server] .kanban-card:hover{box-shadow:0 0 10px rgba(0,255,136,.15);}
 
-/* Vault-Tab */
+/* ═══════════════════════════════
+   KANBAN – SERVER ROOM THEME
+   ═══════════════════════════════ */
+
+/* Spalten */
+[data-theme=server] .kanban-col{
+  background:#0a0e0a;
+  border-color:#1a2e1a;
+  box-shadow:0 0 10px rgba(0,255,136,.04);
+}
+[data-theme=server] .kanban-col:hover{
+  box-shadow:0 0 20px rgba(0,255,136,.1);
+}
+
+/* Spalten-Header mit Farb-Akzent je Status */
+[data-theme=server] .kanban-col:nth-child(1) .kanban-col-header{
+  background:#001a0a;
+  border-bottom:2px solid rgba(0,170,255,.4);
+  color:#00aaff;
+  text-shadow:0 0 8px rgba(0,170,255,.5);
+}
+[data-theme=server] .kanban-col:nth-child(2) .kanban-col-header{
+  background:#1a1000;
+  border-bottom:2px solid rgba(255,179,0,.4);
+  color:#ffb300;
+  text-shadow:0 0 8px rgba(255,179,0,.5);
+}
+[data-theme=server] .kanban-col:nth-child(3) .kanban-col-header{
+  background:#001a0a;
+  border-bottom:2px solid rgba(0,255,136,.4);
+  color:#00ff88;
+  text-shadow:0 0 8px rgba(0,255,136,.6);
+}
+[data-theme=server] .kanban-col:nth-child(4) .kanban-col-header{
+  background:#1a0000;
+  border-bottom:2px solid rgba(255,68,68,.4);
+  color:#ff4444;
+  text-shadow:0 0 8px rgba(255,68,68,.5);
+}
+
+/* Count-Badge je Spalte */
+[data-theme=server] .kanban-col:nth-child(1) .kanban-count{ background:#001a3d;color:#00aaff;box-shadow:0 0 6px rgba(0,170,255,.3); }
+[data-theme=server] .kanban-col:nth-child(2) .kanban-count{ background:#2a1800;color:#ffb300;box-shadow:0 0 6px rgba(255,179,0,.3); }
+[data-theme=server] .kanban-col:nth-child(3) .kanban-count{ background:#001a0a;color:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.3); }
+[data-theme=server] .kanban-col:nth-child(4) .kanban-count{ background:#1a0000;color:#ff4444;box-shadow:0 0 6px rgba(255,68,68,.3); }
+
+/* Karten */
+[data-theme=server] .kanban-card{
+  background:#0d120d;
+  border-color:#1a2e1a;
+  transition:border-color .2s, box-shadow .2s, transform .15s;
+}
+[data-theme=server] .kanban-card:hover{
+  border-color:rgba(0,255,136,.5);
+  box-shadow:0 0 14px rgba(0,255,136,.15),0 0 28px rgba(0,255,136,.05);
+  transform:translateY(-2px);
+}
+[data-theme=server] .kanban-overdue{
+  border-color:rgba(255,68,68,.6)!important;
+  box-shadow:0 0 10px rgba(255,68,68,.15)!important;
+}
+[data-theme=server] .kanban-card-title{
+  color:#c8ffc8;
+  text-shadow:0 0 4px rgba(0,255,136,.2);
+}
+[data-theme=server] .kanban-card-firma{ color:#4a7a4a; }
+[data-theme=server] .kanban-card-date{ color:#3a5a3a; }
+
+/* Leere Spalten */
+[data-theme=server] .kanban-empty{
+  color:#2a4a2a;
+  font-family:'Courier New',monospace;
+  font-size:12px;
+}
+[data-theme=server] .kanban-empty::before{
+  content:'▶ ';
+  color:#1a3a1a;
+}
+
+/* ═══════════════════════════════
+   VAULT – SERVER ROOM THEME
+   ═══════════════════════════════ */
+
 .vault-upload-row{
   display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
   margin-bottom:20px;
   padding-bottom:20px;
   border-bottom:1px solid var(--border);
 }
-.vault-upload-row input[type=text]{
-  flex:1;min-width:160px;
+.vault-upload-row input[type=text]{ flex:1;min-width:160px; }
+.vault-upload-row input[type=file]{ flex:2;min-width:200px; }
+
+[data-theme=server] .vault-upload-row{
+  border-bottom-color:#1a2e1a;
+  padding:14px;
+  background:#0d120d;
+  border-radius:12px;
+  border:1px solid #1a2e1a;
+  box-shadow:0 0 8px rgba(0,255,136,.04);
+  margin-bottom:20px;
 }
-.vault-upload-row input[type=file]{
-  flex:2;min-width:200px;
+
+/* Vault-Einträge als Server-Dateien */
+[data-theme=server] #vaultListe .job{
+  background:#0a0e0a;
+  border-color:#1a2e1a;
+}
+[data-theme=server] #vaultListe .job:hover{
+  border-color:rgba(0,255,136,.4);
+  box-shadow:0 0 12px rgba(0,255,136,.12);
+}
+[data-theme=server] #vaultListe strong{
+  color:#c8ffc8;
+  text-shadow:0 0 4px rgba(0,255,136,.2);
+}
+[data-theme=server] #vaultListe .muted{
+  color:#3a5a3a;
+  font-family:'Courier New',monospace;
+  font-size:11px;
 }
