@@ -62,6 +62,84 @@ body{font-family:system-ui,sans-serif;background:var(--surface2);color:var(--tex
 [data-theme=dark] .btn{box-shadow:0 1px 3px rgba(0,0,0,.3);}
 [data-theme=dark] .btn:hover{background:#2e2e2e;box-shadow:0 4px 10px rgba(0,0,0,.4);}
 
+/* Settings-Button (Zahnrad oben rechts) */
+.settings-btn{
+  gap:6px;
+}
+.settings-btn.active-settings{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+
+/* ── Settings Page ── */
+.settings-page{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  max-width:560px;
+}
+.settings-section{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.settings-row-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  margin-bottom:2px;
+}
+.theme-toggle-row{
+  display:flex;
+  gap:8px;
+}
+.theme-toggle-btn{
+  flex:1;
+  padding:9px 14px;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--surface2);
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  color:var(--muted);
+  transition:all .15s;
+}
+.theme-toggle-btn:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.theme-toggle-btn.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
+}
+
+/* About / App Info Card */
+.settings-about{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  padding:32px 22px;
+  gap:6px;
+}
+.settings-about-logo{
+  margin-bottom:8px;
+}
+.settings-about-name{
+  font-size:22px;
+  font-weight:700;
+  color:var(--text);
+}
+.settings-about-version{
+  font-size:14px;
+  color:var(--muted);
+}
+
 /* ── Toast ── */
 .toast{
   position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
@@ -116,34 +194,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
 .loading-bar{height:3px;background:var(--primary);border-radius:999px;width:0;transition:width .3s;position:fixed;top:0;left:0;z-index:999}
 .vorlage-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:640px){.vorlage-layout{grid-template-columns:1fr}}
-
-/* ── Erfahrungen Layout ── */
 .erfahrungen-layout{display:grid;grid-template-columns:1fr;gap:16px}
 .skill-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .skill-add-row input{flex:1;min-width:160px}
 .skill-add-row select{width:auto;flex-shrink:0}
 .skill-add-row .btn{flex-shrink:0}
-
-/* ── Hide-Row (Ausblenden-Steuerung) ── */
-.hide-row{
-  display:flex;
-  gap:6px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.hide-row select,.hide-select{
-  width:auto;
-  min-width:0;
-  flex:1 1 150px;
-  max-width:220px;
-}
-@media(max-width:480px){
-  .hide-row{flex-direction:column;align-items:stretch;}
-  .hide-row select,.hide-select{max-width:100%;}
-}
-
+.hide-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.hide-row select,.hide-select{width:auto;min-width:0;flex:1 1 150px;max-width:220px;}
+@media(max-width:480px){.hide-row{flex-direction:column;align-items:stretch;}.hide-row select,.hide-select{max-width:100%;}}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Zeitstrahl */
 .timeline{list-style:none;padding:0;margin:0;position:relative}
 .timeline::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:2px;background:var(--border)}
 .timeline li{position:relative;padding:0 0 18px 40px;font-size:14px}
