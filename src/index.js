@@ -60,6 +60,7 @@ app.use('/api/erfahrungen',  require('./routes/erfahrungen'));
 app.use('/api/ki',           require('./routes/ki'));
 app.use('/api/suche',        require('./routes/suche'));
 app.use('/api/dokumente',    require('./routes/dokumente'));
+app.use('/api/vault',        require('./routes/vault'));
 
 // ── Fehler-Handler ──
 app.use(notFoundHandler);
