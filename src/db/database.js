@@ -71,10 +71,22 @@ db.exec(`
     erstellt_am TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS dokumente (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    bewerbung_id INTEGER NOT NULL REFERENCES bewerbungen(id) ON DELETE CASCADE,
+    dateiname    TEXT NOT NULL,
+    originalname TEXT NOT NULL,
+    mimetype     TEXT NOT NULL,
+    groesse      INTEGER NOT NULL,
+    typ          TEXT DEFAULT 'sonstiges',
+    hochgeladen_am TEXT DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_bew_status     ON bewerbungen(status);
   CREATE INDEX IF NOT EXISTS idx_bew_archiviert ON bewerbungen(archiviert);
   CREATE INDEX IF NOT EXISTS idx_bew_followup   ON bewerbungen(followup_datum);
   CREATE INDEX IF NOT EXISTS idx_komm_bew_id    ON kommentare(bewerbung_id);
+  CREATE INDEX IF NOT EXISTS idx_dok_bew_id     ON dokumente(bewerbung_id);
 `);
 
 // Migrationen
@@ -82,10 +94,22 @@ try { db.exec(`ALTER TABLE vorlagen ADD COLUMN ton TEXT DEFAULT 'formell'`); } c
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN sprache TEXT DEFAULT 'deutsch'`); } catch(e) {}
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN laenge TEXT DEFAULT 'mittel'`); } catch(e) {}
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN hinweise TEXT`); } catch(e) {}
-// Anschreiben-Verlauf (falls DB schon existiert)
 try { db.exec(`CREATE TABLE IF NOT EXISTS anschreiben_verlauf (id INTEGER PRIMARY KEY AUTOINCREMENT, titel TEXT, firma TEXT, text TEXT, model TEXT, stil TEXT, erstellt_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
-// Erfahrungen (falls DB schon existiert)
 try { db.exec(`CREATE TABLE IF NOT EXISTS erfahrungen (id INTEGER PRIMARY KEY, skills TEXT DEFAULT '[]', stationen TEXT DEFAULT '[]', zertifikate TEXT DEFAULT '[]', aktualisiert_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
+// Migration: Dokumente-Tabelle für bestehende DBs
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS dokumente (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    bewerbung_id INTEGER NOT NULL REFERENCES bewerbungen(id) ON DELETE CASCADE,
+    dateiname    TEXT NOT NULL,
+    originalname TEXT NOT NULL,
+    mimetype     TEXT NOT NULL,
+    groesse      INTEGER NOT NULL,
+    typ          TEXT DEFAULT 'sonstiges',
+    hochgeladen_am TEXT DEFAULT (datetime('now'))
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_dok_bew_id ON dokumente(bewerbung_id)`);
+} catch(e) {}
 
 // Standard-Vorlagen
 const count = db.prepare('SELECT COUNT(*) as c FROM vorlagen').get();

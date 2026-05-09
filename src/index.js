@@ -53,12 +53,13 @@ app.get('/api/version', (req, res) => {
 });
 
 // ── Routen ──
-app.use('/api/bewerbungen', require('./routes/bewerbungen'));
-app.use('/api/vorlagen',    require('./routes/vorlagen'));
-app.use('/api/profil',      require('./routes/profil'));
-app.use('/api/erfahrungen', require('./routes/erfahrungen'));
-app.use('/api/ki',          require('./routes/ki'));
-app.use('/api/suche',       require('./routes/suche'));
+app.use('/api/bewerbungen',  require('./routes/bewerbungen'));
+app.use('/api/vorlagen',     require('./routes/vorlagen'));
+app.use('/api/profil',       require('./routes/profil'));
+app.use('/api/erfahrungen',  require('./routes/erfahrungen'));
+app.use('/api/ki',           require('./routes/ki'));
+app.use('/api/suche',        require('./routes/suche'));
+app.use('/api/dokumente',    require('./routes/dokumente'));
 
 // ── Fehler-Handler ──
 app.use(notFoundHandler);
