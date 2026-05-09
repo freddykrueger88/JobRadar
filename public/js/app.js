@@ -97,9 +97,7 @@ function toast(msg, type='success') {
 }
 window.toast = toast;
 
-function setTheme(t){ document.documentElement.dataset.theme=t; localStorage.setItem('theme',t); $('themeBtn').textContent=t==='dark'?'Light Mode':'Dark Mode'; }
-document.addEventListener('DOMContentLoaded',()=>{ setTheme(localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')); init(); });
-document.addEventListener('click',e=>{ if(e.target.id==='themeBtn') setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); });
+document.addEventListener('DOMContentLoaded', () => { init(); });
 
 function showTab(id){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
@@ -114,6 +112,7 @@ function showTab(id){
   if(id==='profil') loadProfil();
   if(id==='anschreiben-verlauf') loadAnschreibenVerlauf();
   if(id==='suche') { loadQuellenStatus(); renderHiddenList(); }
+  if(id==='einstellungen') { if(typeof window.initSettingsPage==='function') window.initSettingsPage(); }
 }
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
 
@@ -121,11 +120,10 @@ function log(msg){ const l=$('log'); if(!l) return; const ts='['+new Date().toLo
 function setLoading(active){ const bar=$('loadingBar'); const sp=$('searchSpinner'); if(bar) bar.style.width=active?'70%':'0'; if(sp) sp.classList.toggle('active',active); }
 function badge(status){ const L={beworben:'Beworben',interview:'Interview',angenommen:'Angenommen',abgelehnt:'Abgelehnt'}; return `<span class="badge badge-${esc(status||'beworben')}">${esc(L[status]||status||'beworben')}</span>`; }
 
-// ── Score: Profil-Keywords + eigene Skills ──
+// ── Score ──
 function scoreJob(j){
   const kw=(state.profil.keywords||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const bl=(state.profil.blacklist||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  // Skills aus erfahrungen.js (synchron aus Cache)
   const mySkills = (typeof window.getSkillsForScore === 'function') ? window.getSkillsForScore() : [];
   const allKw = [...new Set([...kw, ...mySkills])];
   const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.tags||[]).join(' ')).toLowerCase();
@@ -136,7 +134,6 @@ function scoreJob(j){
   return Math.max(0,Math.min(100,s));
 }
 
-// ── Blacklist: Jobs mit Score <= 0 direkt ausblenden ──
 function isBlacklisted(j){
   const bl=(state.profil.blacklist||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   if(!bl.length) return false;
@@ -236,7 +233,9 @@ function manuellHinzufuegenModal(){
   $('mTitel').value=''; $('mFirma').value=''; $('mOrt').value='';
   $('mStatus').value='beworben'; $('mUrl').value=''; $('mNotizen').value='';
   $('mBeworbenAm').value=today();
-  $('mFollowup').value=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+  // Follow-up aus Einstellung
+  const followupDays = (typeof window.getSetting === 'function') ? parseInt(window.getSetting('followupDays', 14)) : 14;
+  $('mFollowup').value=new Date(Date.now()+followupDays*86400000).toISOString().slice(0,10);
   m.style.display='flex';
   setTimeout(()=>$('mTitel').focus(),50);
 }
@@ -311,7 +310,7 @@ async function suche(){
     const rollen=(profil.rollen||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
     state.jobs=(data.results||[])
       .filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); })
-      .filter(j => !isBlacklisted(j))  // Blacklist-Filter: direkt ausblenden
+      .filter(j => !isBlacklisted(j))
       .map(j=>({...j,score:scoreJob(j)}))
       .sort((a,b)=>b.score-a.score)
       .slice(0,parseInt(count,10)||15);
@@ -476,7 +475,8 @@ async function loadKiModels() {
     const data = await api('/api/ki/models');
     const sel = $('kiModel'); if (!sel) return;
     if (data.error) { sel.innerHTML = '<option value="mistral">mistral (Standard)</option>'; return; }
-    sel.innerHTML = (data.models || ['mistral']).map(m => `<option value="${m}" ${m === data.active ? 'selected' : ''}>${m}</option>`).join('');
+    const savedModel = (typeof window.getSetting === 'function') ? window.getSetting('defaultKiModel', '') : '';
+    sel.innerHTML = (data.models || ['mistral']).map(m => `<option value="${m}" ${(savedModel||data.active)===m ? 'selected' : ''}>${m}</option>`).join('');
   } catch(e) { console.warn('Ollama nicht erreichbar'); }
 }
 
@@ -487,7 +487,6 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
   const stilId = $('vorlagenSelect')?.value ? parseInt($('vorlagenSelect').value) : null;
-  // async: erfahrungenKontext aus DB
   const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function') ? await window.getErfahrungenKontext() : '';
   if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche wählen','warn'); return; }
   if (gen) gen.classList.add('active');
@@ -534,7 +533,6 @@ async function kiFeedback() {
   finally { if (gen) gen.classList.remove('active'); }
 }
 
-// ── Anschreiben-Verlauf ──
 async function loadAnschreibenVerlauf() {
   const el = $('anschreibenVerlaufList'); if (!el) return;
   el.innerHTML = '<p class="muted">Lade...</p>';
@@ -599,11 +597,15 @@ async function loadQuellenStatus() {
 
 async function init(){
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  // Settings zuerst anwenden
+  if (typeof window.applySearchDefaults === 'function') window.applySearchDefaults();
+  if (typeof window.applyKiDefaults === 'function') window.applyKiDefaults();
+  if (typeof window.applyUiSettings === 'function') window.applyUiSettings();
+  if (typeof window.runAutoArchive === 'function') window.runAutoArchive(true);
   await loadProfil();
   await loadVorlagen();
   await loadBewerbungen();
   await loadStats();
-  // Erfahrungen vorladen damit Score sofort korrekt ist
   if (typeof window.loadErfahrungen === 'function') window.loadErfahrungen();
   $('filterStatus')?.addEventListener('change', loadBewerbungen);
   $('filterArchiv')?.addEventListener('change', loadBewerbungen);
