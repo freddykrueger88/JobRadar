@@ -25,6 +25,7 @@
     <button class="tab" data-tab="suche">Stellensuche</button>
     <button class="tab" data-tab="verlauf">Verlauf</button>
     <button class="tab" data-tab="anschreiben">Anschreiben</button>
+    <button class="tab" data-tab="anschreiben-verlauf">📝 KI-Verlauf</button>
     <button class="tab" data-tab="vorlagen">KI-Stile</button>
     <button class="tab" data-tab="erfahrungen">Erfahrungen</button>
     <button class="tab" data-tab="profil">Profil</button>
@@ -82,7 +83,6 @@
           </select>
         </div>
       </div>
-      <!-- Ausblenden-Steuerung -->
       <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;margin:0">
           <input type="checkbox" id="toggleHidden" style="width:16px;height:16px;cursor:pointer">
@@ -93,8 +93,6 @@
     </div>
     <div id="quellenStatus" style="margin-bottom:14px"></div>
     <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>
-
-    <!-- Ausgeblendete Liste -->
     <details id="hiddenSection" style="margin-top:24px">
       <summary style="cursor:pointer;font-weight:600;font-size:15px;padding:10px 0;user-select:none">🙈 Ausgeblendete Stellen verwalten</summary>
       <div class="card" style="margin-top:10px">
@@ -158,9 +156,18 @@
         <div class="footerbar">
           <button class="btn primary" onclick="exportPdf()">Als PDF exportieren</button>
           <button class="btn" onclick="sendMail()">✉ Als E-Mail öffnen</button>
-          <button class="btn" onclick="navigator.clipboard.writeText($('letterPreview').value).then(()=>toast('Kopiert ✓'))">Kopieren</button>
+          <button class="btn" onclick="navigator.clipboard.writeText($('letterPreview').value).then(()=>toast('Kopiert \u2713'))">Kopieren</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- KI-Verlauf (Anschreiben) -->
+  <div class="tabpanel" id="anschreiben-verlauf">
+    <div class="card">
+      <h2>📝 KI-Anschreiben-Verlauf</h2>
+      <p class="muted" style="font-size:14px;margin-bottom:16px">Alle generierten Anschreiben – klicke auf "Laden" um ein früheres Anschreiben wieder zu öffnen.</p>
+      <div id="anschreibenVerlaufList"><p class="muted">Lade…</p></div>
     </div>
   </div>
 
@@ -217,7 +224,7 @@
     <div class="erfahrungen-layout">
       <div class="card">
         <h2>🛠 Skills &amp; Technologien</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Die KI wählt automatisch passende Skills aus wenn sie zur Stelle passen.</p>
+        <p class="muted" style="font-size:14px;margin-bottom:16px">Skills fließen in den Match-Score ein und werden der KI beim Anschreiben mitgegeben.</p>
         <div class="skill-add-row">
           <input id="skillName" placeholder="z. B. Linux, Docker, Proxmox…" style="flex:1">
           <select id="skillLevel">
@@ -262,7 +269,7 @@
       </div>
     </div>
     <div style="margin-top:20px;text-align:right">
-      <button class="btn primary" onclick="saveErfahrungen()">&#x1F4BE; Alle Erfahrungen speichern</button>
+      <button class="btn primary" onclick="saveErfahrungen()">💾 Alle Erfahrungen speichern</button>
     </div>
   </div>
 

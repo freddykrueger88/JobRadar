@@ -91,6 +91,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
 .job:hover{border-color:var(--primary)}
 .job.overdue{border-color:var(--error)}
 .job.dueSoon{border-color:var(--warn)}
+.job-hidden{opacity:.6}
 .jobhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .score{font-size:22px;font-weight:700;color:var(--primary);white-space:nowrap}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -115,6 +116,32 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
 .loading-bar{height:3px;background:var(--primary);border-radius:999px;width:0;transition:width .3s;position:fixed;top:0;left:0;z-index:999}
 .vorlage-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:640px){.vorlage-layout{grid-template-columns:1fr}}
+
+/* ── Erfahrungen Layout ── */
+.erfahrungen-layout{display:grid;grid-template-columns:1fr;gap:16px}
+.skill-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.skill-add-row input{flex:1;min-width:160px}
+.skill-add-row select{width:auto;flex-shrink:0}
+.skill-add-row .btn{flex-shrink:0}
+
+/* ── Hide-Row (Ausblenden-Steuerung) ── */
+.hide-row{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.hide-row select,.hide-select{
+  width:auto;
+  min-width:0;
+  flex:1 1 150px;
+  max-width:220px;
+}
+@media(max-width:480px){
+  .hide-row{flex-direction:column;align-items:stretch;}
+  .hide-row select,.hide-select{max-width:100%;}
+}
+
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Zeitstrahl */
 .timeline{list-style:none;padding:0;margin:0;position:relative}
