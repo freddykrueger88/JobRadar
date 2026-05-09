@@ -16,7 +16,7 @@ async function fetchWithTimeout(url, options={}, timeoutMs=90000) {
     return r;
   } catch(e) {
     clearTimeout(tid);
-    if (e.name === 'AbortError') throw new Error('Timeout – Mistral hat zu lange gebraucht (>' + Math.round(timeoutMs/1000) + 's). Beim Kaltstart bitte nochmal versuchen.');
+    if (e.name === 'AbortError') throw new Error('Timeout – Mistral hat zu lange gebraucht (>' + Math.round(timeoutMs/1000) + 's). Bitte nochmal versuchen.');
     throw e;
   }
 }
@@ -52,6 +52,7 @@ function showTab(id){
   if(id==='dashboard') loadStats();
   if(id==='verlauf') loadBewerbungen();
   if(id==='vorlagen') loadVorlagen();
+  if(id==='erfahrungen') window.loadErfahrungen && window.loadErfahrungen();
   if(id==='profil') loadProfil();
   if(id==='suche') loadQuellenStatus();
 }
@@ -271,7 +272,7 @@ async function saveProfil(){
   } catch(e) { toast('Fehler','error'); log('Profil-Fehler: '+e.message); }
 }
 
-// ── KI-Stile (ehemals Vorlagen) ──
+// ── KI-Stile ──
 async function loadVorlagen(){
   try {
     state.vorlagen = await api('/api/vorlagen');
@@ -296,7 +297,6 @@ async function loadVorlagen(){
         </div>`).join('');
       }
     }
-    // Stil-Dropdown im Anschreiben-Tab bef\u00fcllen
     const sel = $('vorlagenSelect');
     if (sel) {
       sel.innerHTML = '<option value="">Kein Stil (Standard)</option>' +
@@ -321,7 +321,6 @@ async function saveVorlage(){
       laenge: $('vorlageLaenge')?.value || 'mittel',
       hinweise: $('vorlageHinweise')?.value.trim() || ''
     });
-    // Felder leeren
     if($('vorlageName')) $('vorlageName').value='';
     if($('vorlageHinweise')) $('vorlageHinweise').value='';
     loadVorlagen();
@@ -355,17 +354,32 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
   const stilId = $('vorlagenSelect')?.value ? parseInt($('vorlagenSelect').value) : null;
+
+  // Erfahrungs-Kontext aus erfahrungen.js holen
+  const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function')
+    ? window.getErfahrungenKontext() : '';
+
   if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
   const stilName = stilId ? (state.vorlagen.find(v=>v.id===stilId)?.name || '') : '';
-  log('KI generiert Anschreiben f\u00fcr: ' + titel + (stilName?' [Stil: '+stilName+']':'') + ' \u2026');
+  log('KI generiert Anschreiben f\u00fcr: ' + titel + (stilName?' [Stil: '+stilName+']':'') +
+    (erfahrungenKontext?' [+Erfahrungen]':'') + ' \u2026');
   toast('KI arbeitet \u2026 bitte warten (bis zu 2 Min beim Kaltstart)', 'warn');
   try {
     const res = await fetchWithTimeout('/api/ki/anschreiben', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({titel,firma,ort:j?.ort||'',beschreibung:j?.beschreibung||'',tags:j?.tags||[],profil:state.profil,model,stilId})
+      body: JSON.stringify({
+        titel, firma,
+        ort: j?.ort||'',
+        beschreibung: j?.beschreibung||'',
+        tags: j?.tags||[],
+        profil: state.profil,
+        model,
+        stilId,
+        erfahrungenKontext   // <-- neu: strukturierter Hintergrund
+      })
     }, 195000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler: '+data.error,'error'); log('Fehler: ' + data.error); return; }
