@@ -55,7 +55,14 @@ function ollamaRequest(prompt) {
   });
 }
 
-router.get('/models', async (req, res) => {
+// ── GET /api/ki/models – nur lokal erreichbar ────────────────────────────────
+router.get('/models', (req, res, next) => {
+  const host = req.hostname;
+  if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') {
+    return res.status(403).json({ error: 'Nicht erlaubt.' });
+  }
+  next();
+}, async (req, res) => {
   try {
     const url = new URL(OLLAMA_URL + '/api/tags');
     const lib = url.protocol === 'https:' ? https : http;
@@ -99,7 +106,6 @@ router.post('/anschreiben', anschreibenValidator, validate, async (req, res) => 
   const safeStaerk       = sanitizePromptField(profil?.staerken, MAX_PROFIL_FELD);
   const safeErfahrungen  = sanitizePromptField(erfahrungenKontext, MAX_EFAHRUNGEN);
 
-  // Stil-Vorgabe aus DB laden
   let stilBlock = '';
   let stilName = '';
   if (stilId) {
@@ -140,11 +146,9 @@ Schreibe NUR den Anschreiben-Text.`;
     const text = result.response || '';
     const model = result.model || OLLAMA_MODEL;
 
-    // Verlauf speichern
     try {
       db.prepare(`INSERT INTO anschreiben_verlauf (titel, firma, text, model, stil) VALUES (?,?,?,?,?)`)
         .run(safeTitel, safeFirma, text, model, stilName || null);
-      // Verlauf auf 50 Einträge begrenzen
       const oldest = db.prepare(`SELECT id FROM anschreiben_verlauf ORDER BY erstellt_am DESC LIMIT -1 OFFSET 50`).all();
       if (oldest.length) db.prepare(`DELETE FROM anschreiben_verlauf WHERE id IN (${oldest.map(()=>'?').join(',')})`).run(...oldest.map(r=>r.id));
     } catch(e) { console.warn('Verlauf konnte nicht gespeichert werden:', e.message); }

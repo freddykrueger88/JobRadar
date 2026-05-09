@@ -3,7 +3,7 @@ const router = express.Router();
 const https = require('https');
 const http = require('http');
 
-// Einfaches In-Memory Cache (TTL: 5 Minuten) um externe APIs nicht zu hammern
+// Einfaches In-Memory Cache (TTL: 5 Minuten)
 const sucheCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -16,7 +16,6 @@ function getCached(key) {
 function setCache(key, data) {
   sucheCache.set(key, { ts: Date.now(), data });
 }
-// Cache regelmaessig aufraumen
 setInterval(() => {
   const cutoff = Date.now() - CACHE_TTL_MS;
   for (const [k, v] of sucheCache) { if (v.ts < cutoff) sucheCache.delete(k); }
@@ -38,7 +37,6 @@ function httpGet(url, headers={}) {
   });
 }
 
-/** Jooble verwendet POST – eigene Hilfsfunktion */
 function httpPost(url, bodyObj) {
   return new Promise((resolve, reject) => {
     const bodyStr = JSON.stringify(bodyObj);
@@ -156,10 +154,17 @@ async function jooble(rolle, ort, n, umkreis) {
 const QUELLEN = { arbeitnow, jobicy, arbeitsagentur, themuse, remotive, adzuna, jooble };
 
 router.get('/', async (req, res) => {
-  const { quelle='all', rolle='Linux Administrator', ort='Remote', count='15', umkreis='0' } = req.query;
-  const n = Math.max(1, Math.min(30, parseInt(count,10)||15));
-  const cacheKey = `${quelle}|${rolle}|${ort}|${n}|${umkreis}`;
+  const quelle = String(req.query.quelle || 'all').slice(0, 50);
+  const rolle  = String(req.query.rolle  || 'Linux Administrator').slice(0, 100);
+  const ort    = String(req.query.ort    || 'Remote').slice(0, 100);
+  const umkreis = String(req.query.umkreis || '0').slice(0, 10);
+  const n = Math.max(1, Math.min(30, parseInt(req.query.count, 10) || 15));
 
+  if (quelle !== 'all' && !QUELLEN[quelle]) {
+    return res.status(400).json({ error: 'Unbekannte Quelle.' });
+  }
+
+  const cacheKey = `${quelle}|${rolle}|${ort}|${n}|${umkreis}`;
   const cached = getCached(cacheKey);
   if (cached) return res.json(cached);
 
@@ -182,8 +187,8 @@ router.get('/quellen', (req, res) => {
     { id: 'arbeitsagentur', name: 'Arbeitsagentur',  kostenlos: true, keyRequired: false },
     { id: 'themuse',        name: 'The Muse',        kostenlos: true, keyRequired: false },
     { id: 'remotive',       name: 'Remotive',        kostenlos: true, keyRequired: false },
-    { id: 'adzuna',         name: 'Adzuna',          kostenlos: true, keyRequired: true,  configured: !!(process.env.ADZUNA_APP_ID) },
-    { id: 'jooble',         name: 'Jooble',          kostenlos: true, keyRequired: true,  configured: !!(process.env.JOOBLE_API_KEY) },
+    { id: 'adzuna',         name: 'Adzuna',          kostenlos: true, keyRequired: true },
+    { id: 'jooble',         name: 'Jooble',          kostenlos: true, keyRequired: true },
   ]);
 });
 

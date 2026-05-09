@@ -6,7 +6,7 @@ const multer  = require('multer');
 const db      = require('../db/database');
 
 // ── Upload-Verzeichnis ──────────────────────────────────────────────────────
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '../../data/uploads');
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../../data/uploads'));
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // ── Multer-Konfiguration ────────────────────────────────────────────────────
@@ -36,6 +36,15 @@ const upload = multer({
     else cb(new Error('Nicht erlaubter Dateityp. Erlaubt: PDF, DOCX, DOC, PNG, JPEG'));
   },
 });
+
+// ── Hilfsfunktion: Pfad-Traversal verhindern ────────────────────────────────
+function safePath(filename) {
+  const resolved = path.resolve(UPLOAD_DIR, path.basename(filename));
+  if (!resolved.startsWith(UPLOAD_DIR + path.sep) && resolved !== UPLOAD_DIR) {
+    return null;
+  }
+  return resolved;
+}
 
 // ── GET /api/dokumente/stats ─────────────────────────────────────────────────
 router.get('/stats', (req, res) => {
@@ -74,7 +83,8 @@ router.post('/:bewerbungId', upload.single('datei'), (req, res) => {
 router.get('/download/:id', (req, res) => {
   const doc = db.prepare('SELECT * FROM dokumente WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Dokument nicht gefunden.' });
-  const filePath = path.join(UPLOAD_DIR, doc.dateiname);
+  const filePath = safePath(doc.dateiname);
+  if (!filePath) return res.status(400).json({ error: 'Ungültiger Dateipfad.' });
   if (!fs.existsSync(filePath)) return res.status(410).json({ error: 'Datei nicht mehr vorhanden.' });
   res.setHeader('Content-Disposition', `attachment; filename="${doc.originalname}"`);
   res.setHeader('Content-Type', doc.mimetype);
@@ -85,8 +95,8 @@ router.get('/download/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const doc = db.prepare('SELECT * FROM dokumente WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Dokument nicht gefunden.' });
-  const filePath = path.join(UPLOAD_DIR, doc.dateiname);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  const filePath = safePath(doc.dateiname);
+  if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
   db.prepare('DELETE FROM dokumente WHERE id = ?').run(req.params.id);
   res.json({ success: true, deleted: req.params.id });
 });
