@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#01696f"/>
   <title>JobRadar</title>
   <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/kanban.css"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
@@ -28,12 +29,14 @@
   <div id="loadingBar" class="loading-bar"></div>
   <div class="tabs">
     <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="kanban">🗂 Kanban</button>
     <button class="tab" data-tab="suche">Stellensuche</button>
     <button class="tab" data-tab="verlauf">Verlauf</button>
     <button class="tab" data-tab="anschreiben">Anschreiben</button>
     <button class="tab" data-tab="anschreiben-verlauf">📝 KI-Verlauf</button>
     <button class="tab" data-tab="vorlagen">KI-Stile</button>
     <button class="tab" data-tab="erfahrungen">Erfahrungen</button>
+    <button class="tab" data-tab="vault">📄 CV-Vault</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
 
@@ -47,21 +50,29 @@
       <div class="stat"><div class="num" id="statAbgelehnt">–</div><div class="lbl">Abgelehnt</div></div>
       <div class="stat"><div class="num" id="statDokumente">–</div><div class="lbl">📎 Dokumente</div></div>
     </div>
-
-    <!-- Charts -->
     <div class="chart-grid">
-      <div class="chart-card" id="chartStatusCard">
+      <div class="chart-card">
         <h3>🎯 Status-Verteilung</h3>
         <canvas id="chartStatus" width="300" height="220"></canvas>
         <div class="chart-legend" id="chartStatusLegend"></div>
       </div>
-      <div class="chart-card" id="chartVerlaufCard">
+      <div class="chart-card">
         <h3>📅 Bewerbungen pro Monat</h3>
         <canvas id="chartVerlauf" width="300" height="220"></canvas>
       </div>
     </div>
-
     <div class="card"><h2>Status-Log</h2><div class="log" id="log"></div></div>
+  </div>
+
+  <!-- Kanban -->
+  <div class="tabpanel" id="kanban">
+    <div class="card" style="margin-bottom:16px">
+      <h2>🗂 Kanban-Board</h2>
+      <p class="muted" style="font-size:14px">Verschiebe Bewerbungen mit den Pfeilen ← → zwischen den Spalten.</p>
+    </div>
+    <div class="kanban-board" id="kanbanBoard">
+      <p class="muted" style="padding:24px">Klicke auf den Tab um das Board zu laden.</p>
+    </div>
   </div>
 
   <!-- Stellensuche -->
@@ -294,6 +305,21 @@
     </div>
   </div>
 
+  <!-- CV-Vault -->
+  <div class="tabpanel" id="vault">
+    <div class="card">
+      <h2>📄 Lebenslauf-Vault</h2>
+      <p class="muted" style="font-size:14px;margin-bottom:20px">Speichere mehrere Lebenslauf-Versionen und verknüpfe pro Bewerbung welchen CV du geschickt hast.</p>
+      <div class="vault-upload-row">
+        <input type="text" id="vaultName" placeholder="Name z. B. CV v3 – IT Support 2026" style="flex:2;min-width:180px">
+        <input type="file" id="vaultDatei" accept=".pdf,.doc,.docx" style="flex:2;min-width:180px">
+        <input type="text" id="vaultNotiz" placeholder="Notiz (optional)" style="flex:1;min-width:120px">
+        <button class="btn primary" onclick="window._vaultUpload()">⬆️ Hochladen</button>
+      </div>
+      <div id="vaultListe"><p class="muted" style="font-size:14px">Lade…</p></div>
+    </div>
+  </div>
+
   <!-- Profil -->
   <div class="tabpanel" id="profil">
     <div class="card">
@@ -321,8 +347,6 @@
   <!-- Einstellungen -->
   <div class="tabpanel" id="einstellungen">
     <div class="settings-page">
-
-      <!-- Erscheinungsbild -->
       <div class="card">
         <h2>🌟 Erscheinungsbild</h2>
         <div class="settings-section">
@@ -345,11 +369,8 @@
           <p class="muted" style="font-size:12px;margin-top:6px">Farbthema gilt nur für Light- und Dark-Modus. Server Room hat ein eigenes Grün.</p>
         </div>
       </div>
-
-      <!-- Block 1: Suche -->
       <div class="card">
         <h2>🔍 Standard-Sucheinstellungen</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Diese Werte werden beim Öffnen der Stellensuche automatisch vorausgewählt.</p>
         <div class="stack">
           <div class="row">
             <div><label>Standard-Quelle</label>
@@ -381,16 +402,11 @@
           <button class="btn primary" onclick="saveSettingsBlock('suche')">Speichern</button>
         </div>
       </div>
-
-      <!-- Block 2: KI -->
       <div class="card">
         <h2>✨ KI-Standardwerte</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Vorausgewähltes Modell und Sprache beim Öffnen des Anschreiben-Generators.</p>
         <div class="stack">
           <div class="row">
-            <div><label>Standard-Modell</label>
-              <input id="setDefaultKiModel" placeholder="z. B. mistral">
-            </div>
+            <div><label>Standard-Modell</label><input id="setDefaultKiModel" placeholder="z. B. mistral"></div>
             <div><label>Standard-Sprache</label>
               <select id="setDefaultKiSprache">
                 <option value="">Nicht festlegen</option>
@@ -402,8 +418,6 @@
           <button class="btn primary" onclick="saveSettingsBlock('ki')">Speichern</button>
         </div>
       </div>
-
-      <!-- Block 3: Bewerbungen -->
       <div class="card">
         <h2>📋 Bewerbungen</h2>
         <div class="stack">
@@ -411,42 +425,34 @@
             <div>
               <label>Auto-Archivierung nach (Tagen)</label>
               <input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert">
-              <p class="muted" style="font-size:12px;margin-top:4px">Bewerbungen ohne Antwort werden nach X Tagen automatisch archiviert. 0 = aus.</p>
+              <p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p>
             </div>
             <div>
               <label>Standard Follow-up nach (Tagen)</label>
               <input id="setFollowupDays" type="number" min="1" max="60" value="14">
-              <p class="muted" style="font-size:12px;margin-top:4px">Wird beim manuellen Hinzufügen vorausgefüllt.</p>
             </div>
           </div>
           <button class="btn primary" onclick="saveSettingsBlock('bewerbungen')">Speichern</button>
         </div>
       </div>
-
-      <!-- Block 4: Daten / Backup -->
       <div class="card">
         <h2>💾 Daten &amp; Backup</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Exportiere alle Daten als JSON-Backup oder importiere ein früheres Backup.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <button class="btn primary" onclick="exportBackup()">⬇️ Export (JSON)</button>
           <button class="btn" onclick="importBackup()">⬆️ Import (JSON)</button>
           <button class="btn" style="color:var(--error);border-color:var(--error)" onclick="resetDatabase()">🗑 Datenbank zurücksetzen</button>
         </div>
       </div>
-
-      <!-- Block 5: Oberfläche -->
       <div class="card">
         <h2>🖥 Oberfläche</h2>
         <div class="stack">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:0">
             <input type="checkbox" id="setCompactView" style="width:16px;height:16px">
-            Kompakte Ansicht (weniger Abstand in Bewerbungsliste)
+            Kompakte Ansicht
           </label>
           <button class="btn primary" onclick="saveSettingsBlock('ui')">Speichern</button>
         </div>
       </div>
-
-      <!-- App Info -->
       <div class="card settings-about">
         <div class="settings-about-logo">
           <img src="/logo.png" alt="JobRadar Logo" style="width:64px;height:64px;object-fit:contain;border-radius:14px;">
@@ -460,7 +466,6 @@
           GitHub öffnen
         </a>
       </div>
-
     </div>
   </div>
 
@@ -508,6 +513,9 @@
 <script src="/js/settings.js"></script>
 <script src="/js/dokumente.js"></script>
 <script src="/js/dashboard.js"></script>
+<script src="/js/snapshot.js"></script>
+<script src="/js/vault.js"></script>
+<script src="/js/kanban.js"></script>
 <script src="/js/app.js"></script>
 <script>
 (function() {
@@ -565,7 +573,7 @@
   function applyTheme(theme) {
     const t = themes[theme] || themes.teal;
     const mode = localStorage.getItem('jr_mode') || 'light';
-    if (mode === 'server') return; // Server Room hat eigene Farben
+    if (mode === 'server') return;
     document.documentElement.style.setProperty('--primary', t.primary);
     document.documentElement.style.setProperty('--primary-hover', t.primaryHover);
     if (themeSelect) themeSelect.value = theme;
