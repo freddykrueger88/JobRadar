@@ -113,6 +113,8 @@ function showTab(id){
   if(id==='anschreiben-verlauf') loadAnschreibenVerlauf();
   if(id==='suche') { loadQuellenStatus(); renderHiddenList(); }
   if(id==='einstellungen') { if(typeof window.initSettingsPage==='function') window.initSettingsPage(); }
+  if(id==='kanban') window.ladeKanban && window.ladeKanban();
+  if(id==='vault') window.ladeVault && window.ladeVault();
 }
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
 
@@ -155,6 +157,7 @@ async function loadStats(){
     if($('statInterview')) $('statInterview').textContent=by.interview||0;
     if($('statAngenommen')) $('statAngenommen').textContent=by.angenommen||0;
     if($('statAbgelehnt')) $('statAbgelehnt').textContent=by.abgelehnt||0;
+    if($('statDokumente')) $('statDokumente').textContent=s.dokCount||0;
   } catch(e) { log('Stats-Fehler: '+e.message); }
 }
 
@@ -175,19 +178,27 @@ function renderBewerbungen(){
   el.innerHTML=state.bewerbungen.map(b=>{
     const overdue=b.followup_datum&&b.followup_datum<t&&b.status!=='angenommen';
     const dueSoon=b.followup_datum&&b.followup_datum>=t&&b.followup_datum<=new Date(Date.now()+3*86400000).toISOString().slice(0,10)&&b.status!=='angenommen';
+    // Vault-Anzeige
+    const vaultData = (typeof window.getVaultData === 'function') ? window.getVaultData() : [];
+    const cv = b.lebenslauf_id ? vaultData.find(v=>v.id===b.lebenslauf_id) : null;
     return `<article class="job ${overdue?'overdue':dueSoon?'dueSoon':''}" id="job-${b.id}">
       <div class="jobhead">
         <div><strong>${esc(b.titel)}</strong><div class="muted" style="margin-top:4px">${esc(b.firma)} \u00b7 ${esc(b.ort||'')} \u00b7 <em>${esc(b.quelle||'manuell')}</em></div></div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${badge(b.status)}${b.bewertung?`<span class="chip">\u2605 ${b.bewertung}/5</span>`:''}</div>
       </div>
       <div class="muted" style="margin-top:8px;font-size:14px">Beworben: ${esc(b.beworben_am||'-')}${b.followup_datum?' \u00b7 Follow-up: <strong>'+esc(b.followup_datum)+'</strong>':''}</div>
+      ${cv ? `<div style="margin-top:6px;font-size:13px"><span class="chip" style="border-color:var(--primary);color:var(--primary)">\uD83D\uDCC4 ${esc(cv.name)}</span></div>` : ''}
       ${b.notizen?`<div class="muted" style="margin-top:8px;font-size:14px;white-space:pre-wrap">${esc(b.notizen)}</div>`:''}
-      <div class="chips">${overdue?'<span class="chip" style="border-color:var(--error);color:var(--error)">\u26a0 Überfällig</span>':''}${dueSoon?'<span class="chip" style="border-color:var(--warn);color:#8a6400">\u23f0 Fällig bald</span>':''}</div>
+      <div class="chips">${overdue?'<span class="chip" style="border-color:var(--error);color:var(--error)">\u26a0 \u00dcberf\u00e4llig</span>':''}${dueSoon?'<span class="chip" style="border-color:var(--warn);color:#8a6400">\u23f0 F\u00e4llig bald</span>':''}</div>
       <div class="inline-edit" id="edit-${b.id}">
         <textarea id="notiz-${b.id}" rows="3" placeholder="Notizen...">${esc(b.notizen||'')}</textarea>
         <input id="followup-${b.id}" type="date" value="${esc(b.followup_datum||today())}">
         <div class="row-btn">
           <select id="bewertung-${b.id}"><option value="">Bewertung</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${b.bewertung==n?'selected':''}>${'\u2605'.repeat(n)} (${n}/5)</option>`).join('')}</select>
+          <select id="vault-select-${b.id}" class="vault-select">
+            <option value="">— kein CV verknüpft —</option>
+            ${vaultData.map(v=>`<option value="${v.id}" ${b.lebenslauf_id==v.id?'selected':''}>${esc(v.name)}</option>`).join('')}
+          </select>
           <button class="btn primary small" onclick="saveInlineEdit(${b.id})">Speichern</button>
           <button class="btn small" onclick="toggleEdit(${b.id})">Abbrechen</button>
         </div>
@@ -198,6 +209,7 @@ function renderBewerbungen(){
         <button class="btn small" onclick="setStatus(${b.id},'angenommen')">Angenommen</button>
         <button class="btn small" onclick="toggleEdit(${b.id})">&#9998; Bearbeiten</button>
         <button class="btn small" onclick="openTimeline(${b.id})">&#128203; Verlauf</button>
+        ${b.stellenbeschreibung ? `<button class="btn small" onclick="window.zeigeSnapshot(${JSON.stringify(b.stellenbeschreibung||'')})">\uD83D\uDCCB Anzeige</button>` : ''}
         <button class="btn small" onclick="openDokumenteModal(${b.id},'${esc(b.firma)}')">&#128206; Dokumente</button>
         <button class="btn small" onclick="archivieren(${b.id},${b.archiviert})">${b.archiviert?'Reaktivieren':'Archivieren'}</button>
         <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="loeschen(${b.id},'${esc(b.titel)}')">&#x1F5D1; Löschen</button>
@@ -210,7 +222,14 @@ function renderBewerbungen(){
 window.toggleEdit=(id)=>{ const el=$('edit-'+id); if(el) el.classList.toggle('open'); };
 window.saveInlineEdit=async(id)=>{
   try {
-    await api('/api/bewerbungen/'+id,'PUT',{notizen:$('notiz-'+id)?.value||'',followup_datum:$('followup-'+id)?.value||'',bewertung:$('bewertung-'+id)?.value?parseInt($('bewertung-'+id).value):null});
+    const vaultSel = $('vault-select-'+id);
+    const lebenslauf_id = vaultSel?.value ? parseInt(vaultSel.value) : null;
+    await api('/api/bewerbungen/'+id,'PUT',{
+      notizen:$('notiz-'+id)?.value||'',
+      followup_datum:$('followup-'+id)?.value||'',
+      bewertung:$('bewertung-'+id)?.value?parseInt($('bewertung-'+id).value):null,
+      lebenslauf_id
+    });
     loadBewerbungen(); toast('Gespeichert'); log('Gespeichert.');
   } catch(e) { toast('Fehler beim Speichern','error'); log('Fehler: '+e.message); }
 };
@@ -236,6 +255,13 @@ function manuellHinzufuegenModal(){
   $('mBeworbenAm').value=today();
   const followupDays = (typeof window.getSetting === 'function') ? parseInt(window.getSetting('followupDays', 14)) : 14;
   $('mFollowup').value=new Date(Date.now()+followupDays*86400000).toISOString().slice(0,10);
+  // Vault-Select im Modal befüllen
+  const mVault = $('mVaultSelect');
+  if (mVault) {
+    const vd = (typeof window.getVaultData === 'function') ? window.getVaultData() : [];
+    mVault.innerHTML = '<option value="">— kein CV —</option>' +
+      vd.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+  }
   m.style.display='flex';
   setTimeout(()=>$('mTitel').focus(),50);
 }
@@ -245,6 +271,7 @@ async function manuellSpeichern(){
   const titel=$('mTitel').value.trim();
   const firma=$('mFirma').value.trim();
   if(!titel||!firma){ toast('Titel und Firma sind Pflichtfelder','error'); return; }
+  const lebenslauf_id = $('mVaultSelect')?.value ? parseInt($('mVaultSelect').value) : null;
   try {
     await api('/api/bewerbungen','POST',{
       titel, firma,
@@ -253,7 +280,8 @@ async function manuellSpeichern(){
       beworben_am:$('mBeworbenAm').value||today(),
       followup_datum:$('mFollowup').value||'',
       url:$('mUrl').value.trim(),
-      notizen:$('mNotizen').value.trim()
+      notizen:$('mNotizen').value.trim(),
+      lebenslauf_id
     });
     $('modalManuell').style.display='none';
     loadBewerbungen();
@@ -280,6 +308,7 @@ async function openTimeline(id){
     </div>
     <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn small" onclick="mailModal(${id},'${esc(b.titel)}')">\u2709 E-Mail vorbereiten</button>
+      ${b.stellenbeschreibung ? `<button class="btn small" onclick="window.zeigeSnapshot(${JSON.stringify(b.stellenbeschreibung||'')})">\uD83D\uDCCB Anzeige-Snapshot</button>` : ''}
       ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
     </div>
   </div>`;
@@ -380,11 +409,22 @@ function renderJobs(){
   }).join('');
 }
 
+// Als beworben markieren – mit Stellenbeschreibung-Snapshot
 window.alsBeworben=async(i)=>{
   const j=state.jobs[i];
   if(getMatch(j.firma,j.titel)){toast('Bereits beworben bei '+j.firma,'warn');log('Hinweis: Bereits beworben bei '+j.firma);return;}
   try {
-    await api('/api/bewerbungen','POST',{titel:j.titel,firma:j.firma,ort:j.ort||'',quelle:j.quelle||'',url:j.url||'',beworben_am:today(),followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10),status:'beworben'});
+    await api('/api/bewerbungen','POST',{
+      titel:j.titel,
+      firma:j.firma,
+      ort:j.ort||'',
+      quelle:j.quelle||'',
+      url:j.url||'',
+      beworben_am:today(),
+      followup_datum:new Date(Date.now()+14*86400000).toISOString().slice(0,10),
+      status:'beworben',
+      stellenbeschreibung: j.beschreibung || null
+    });
     await loadBewerbungen(); renderJobs(); toast('Beworben: '+j.titel); log('Beworben gespeichert: '+j.titel);
     if(Notification.permission!=='granted') requestNotifications();
   } catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
@@ -606,6 +646,7 @@ async function init(){
   await loadBewerbungen();
   await loadStats();
   if (typeof window.loadErfahrungen === 'function') window.loadErfahrungen();
+  if (typeof window.ladeVault === 'function') window.ladeVault();
   $('filterStatus')?.addEventListener('change', loadBewerbungen);
   $('filterArchiv')?.addEventListener('change', loadBewerbungen);
   $('filterFirma')?.addEventListener('input', loadBewerbungen);
