@@ -198,6 +198,7 @@ function renderBewerbungen(){
         <button class="btn small" onclick="setStatus(${b.id},'angenommen')">Angenommen</button>
         <button class="btn small" onclick="toggleEdit(${b.id})">&#9998; Bearbeiten</button>
         <button class="btn small" onclick="openTimeline(${b.id})">&#128203; Verlauf</button>
+        <button class="btn small" onclick="openDokumenteModal(${b.id},'${esc(b.firma)}')">&#128206; Dokumente</button>
         <button class="btn small" onclick="archivieren(${b.id},${b.archiviert})">${b.archiviert?'Reaktivieren':'Archivieren'}</button>
         <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="loeschen(${b.id},'${esc(b.titel)}')">&#x1F5D1; Löschen</button>
         ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
@@ -233,7 +234,6 @@ function manuellHinzufuegenModal(){
   $('mTitel').value=''; $('mFirma').value=''; $('mOrt').value='';
   $('mStatus').value='beworben'; $('mUrl').value=''; $('mNotizen').value='';
   $('mBeworbenAm').value=today();
-  // Follow-up aus Einstellung
   const followupDays = (typeof window.getSetting === 'function') ? parseInt(window.getSetting('followupDays', 14)) : 14;
   $('mFollowup').value=new Date(Date.now()+followupDays*86400000).toISOString().slice(0,10);
   m.style.display='flex';
@@ -597,7 +597,6 @@ async function loadQuellenStatus() {
 
 async function init(){
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-  // Settings zuerst anwenden
   if (typeof window.applySearchDefaults === 'function') window.applySearchDefaults();
   if (typeof window.applyKiDefaults === 'function') window.applyKiDefaults();
   if (typeof window.applyUiSettings === 'function') window.applyUiSettings();
