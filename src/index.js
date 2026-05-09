@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const { version, name } = require('../package.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,22 @@ app.use(express.static(path.join(__dirname, '../public'), {
   etag: true,
 }));
 
+// ── Health & Version ──
+app.get('/health', (req, res) => {
+  const db = require('./db/database');
+  let dbOk = false;
+  try { db.prepare('SELECT 1').get(); dbOk = true; } catch (e) { /* noop */ }
+  const status = dbOk ? 200 : 503;
+  res.status(status).json({
+    version,
+    checks: { db: dbOk ? 'ok' : 'error' }
+  });
+});
+
+app.get('/api/version', (req, res) => {
+  res.json({ name, version });
+});
+
 // ── Routen ──
 app.use('/api/bewerbungen', require('./routes/bewerbungen'));
 app.use('/api/vorlagen',    require('./routes/vorlagen'));
@@ -43,15 +60,15 @@ app.use('/api/ki',          require('./routes/ki'));
 app.use('/api/suche',       require('./routes/suche'));
 
 // ── Fehler-Handler ──
-app.use((err, req, res, next) => {
-  console.error(err);
-  const status = err.status || 500;
-  res.status(status).json({ error: err.message || 'Interner Fehler' });
-});
+app.use(require('./middleware/errorHandler'));
 
 // ── SPA-Fallback ──
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-app.listen(PORT, () => console.log(`JobRadar läuft auf Port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`JobRadar läuft auf Port ${PORT}`));
+}
+
+module.exports = app;
