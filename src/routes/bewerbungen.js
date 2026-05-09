@@ -1,135 +1,110 @@
-const express = require('express');
-const router = express.Router();
-const { body, param } = require('express-validator');
-const { validate } = require('../middleware/validate');
-const db = require('../db/database');
+const express   = require('express');
+const router    = express.Router();
+const db        = require('../db/database');
 
-const bewerbungBody = [
-  body('titel').trim().notEmpty().withMessage('Titel ist erforderlich').isLength({ max: 200 }),
-  body('firma').trim().notEmpty().withMessage('Firma ist erforderlich').isLength({ max: 200 }),
-  body('ort').optional().trim().isLength({ max: 200 }),
-  body('quelle').optional().trim().isLength({ max: 200 }),
-  body('url').optional().trim().isURL({ require_protocol: true }).withMessage('Ungueltige URL').isLength({ max: 2000 }),
-  body('status').optional().isIn(['beworben','interview','angenommen','abgelehnt']),
-  body('bewertung').optional({ nullable: true }).isInt({ min: 1, max: 5 }),
-  body('beworben_am').optional().isDate(),
-  body('followup_datum').optional().isDate(),
-  body('notizen').optional().trim().isLength({ max: 5000 }),
-  body('anschreiben').optional().trim().isLength({ max: 20000 }),
-];
+const VALID_STATUS = ['beworben','interview','angenommen','abgelehnt'];
 
-// ACHTUNG Reihenfolge: spezifische Routen (/stats/*, /export/*) MUESSEN vor /:id stehen!
-
-router.get('/stats/overview', (req, res, next) => {
-  try {
-    const today = new Date().toISOString().slice(0,10);
-    const total = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0").get().c;
-    const byStatus = db.prepare("SELECT status, COUNT(*) as c FROM bewerbungen WHERE archiviert=0 GROUP BY status").all();
-    const overdue = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0 AND followup_datum < ? AND status != 'angenommen'").get(today).c;
-    res.json({ total, byStatus, overdue });
-  } catch(e) { next(e); }
+// ── GET /api/bewerbungen ─────────────────────────────────────────────────────
+router.get('/', (req, res) => {
+  const { status, firma, archiviert } = req.query;
+  let sql = 'SELECT * FROM bewerbungen WHERE 1=1';
+  const params = [];
+  if (status)  { sql += ' AND status = ?';    params.push(status); }
+  if (firma)   { sql += ' AND firma LIKE ?';  params.push('%' + firma + '%'); }
+  sql += ' AND archiviert = ?';
+  params.push(archiviert === '1' ? 1 : 0);
+  sql += ' ORDER BY erstellt_am DESC';
+  res.json(db.prepare(sql).all(...params));
 });
 
-router.get('/export/csv', (req, res, next) => {
-  try {
-    const rows = db.prepare('SELECT * FROM bewerbungen ORDER BY beworben_am DESC').all();
-    const header = ['id','titel','firma','ort','quelle','url','status','beworben_am','followup_datum','bewertung','notizen','archiviert'];
-    const csv = [header.join(','), ...rows.map(r => header.map(k => '"'+(String(r[k]||'').replace(/"/g,'""'))+'"').join(','))].join('\n');
-    res.setHeader('Content-Type','text/csv;charset=utf-8');
-    res.setHeader('Content-Disposition','attachment;filename="bewerbungen.csv"');
-    res.send(csv);
-  } catch(e) { next(e); }
+// ── GET /api/bewerbungen/stats/overview ─────────────────────────────────────
+router.get('/stats/overview', (req, res) => {
+  const total   = db.prepare('SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0').get().c;
+  const overdue = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0 AND status!='angenommen' AND followup_datum < date('now')").get().c;
+  const byStatus = db.prepare('SELECT status, COUNT(*) as c FROM bewerbungen WHERE archiviert=0 GROUP BY status').all();
+  res.json({ total, overdue, byStatus });
 });
 
-router.get('/', (req, res, next) => {
-  try {
-    const { status, firma, archiviert } = req.query;
-    let query = 'SELECT * FROM bewerbungen WHERE 1=1';
-    const params = [];
-    if (status) { query += ' AND status = ?'; params.push(status); }
-    if (firma)  { query += ' AND LOWER(firma) LIKE ?'; params.push('%'+firma.toLowerCase()+'%'); }
-    query += archiviert === '1' ? ' AND archiviert = 1' : ' AND archiviert = 0';
-    query += ' ORDER BY beworben_am DESC';
-    res.json(db.prepare(query).all(...params));
-  } catch(e) { next(e); }
+// ── GET /api/bewerbungen/stats/verlauf ──────────────────────────────────────
+router.get('/stats/verlauf', (req, res) => {
+  const rows = db.prepare(`
+    SELECT strftime('%Y-%m', beworben_am) as monat, COUNT(*) as anzahl
+    FROM bewerbungen
+    WHERE beworben_am IS NOT NULL
+    GROUP BY monat
+    ORDER BY monat ASC
+  `).all();
+  res.json(rows);
 });
 
-router.post('/', bewerbungBody, validate, (req, res, next) => {
-  try {
-    const { titel, firma, ort, quelle, url, status, beworben_am, followup_datum, notizen, anschreiben } = req.body;
-    const r = db.prepare(`INSERT INTO bewerbungen (titel,firma,ort,quelle,url,status,beworben_am,followup_datum,notizen,anschreiben)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`).run(
-      titel, firma, ort||'', quelle||'', url||'', status||'beworben',
-      beworben_am||new Date().toISOString().slice(0,10),
-      followup_datum||'', notizen||'', anschreiben||''
-    );
-    db.prepare('INSERT INTO kommentare (bewerbung_id, text) VALUES (?, ?)').run(r.lastInsertRowid, 'Bewerbung eingereicht');
-    res.json({ id: r.lastInsertRowid });
-  } catch(e) { next(e); }
+// ── GET /api/bewerbungen/export/csv ─────────────────────────────────────────
+router.get('/export/csv', (req, res) => {
+  const rows = db.prepare('SELECT * FROM bewerbungen ORDER BY erstellt_am DESC').all();
+  const header = 'id,titel,firma,ort,quelle,status,beworben_am,followup_datum,bewertung,archiviert,url\n';
+  const csv = header + rows.map(r =>
+    [r.id, r.titel, r.firma, r.ort, r.quelle, r.status, r.beworben_am, r.followup_datum, r.bewertung, r.archiviert, r.url]
+      .map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')
+  ).join('\n');
+  res.setHeader('Content-Type','text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition','attachment; filename="bewerbungen.csv"');
+  res.send('\uFEFF' + csv);
 });
 
-router.put('/:id',
-  param('id').isInt(),
-  ...bewerbungBody.map(v => v.optional()),
-  validate,
-  (req, res, next) => {
-    try {
-      const prev = db.prepare('SELECT status FROM bewerbungen WHERE id=?').get(req.params.id);
-      if (!prev) return res.status(404).json({ error: 'Bewerbung nicht gefunden' });
-      const { status, followup_datum, bewertung, notizen, anschreiben, archiviert } = req.body;
-      // Explizite null-Checks statt ||null damit leere Strings (z.B. Notizen loeschen) korrekt gespeichert werden
-      db.prepare(`UPDATE bewerbungen SET
-        status=COALESCE(?,status), followup_datum=COALESCE(?,followup_datum),
-        bewertung=COALESCE(?,bewertung), notizen=COALESCE(?,notizen),
-        anschreiben=COALESCE(?,anschreiben), archiviert=COALESCE(?,archiviert),
-        aktualisiert_am=datetime('now') WHERE id=?`
-      ).run(
-        status != null ? status : null,
-        followup_datum != null ? followup_datum : null,
-        bewertung != null ? bewertung : null,
-        notizen != null ? notizen : null,
-        anschreiben != null ? anschreiben : null,
-        archiviert != null ? archiviert : null,
-        req.params.id
-      );
-      if (status && prev && status !== prev.status) {
-        db.prepare('INSERT INTO kommentare (bewerbung_id, text) VALUES (?, ?)').run(req.params.id, 'Status geändert: '+prev.status+' → '+status);
-      }
-      res.json({ ok: true });
-    } catch(e) { next(e); }
-  }
-);
-
-router.delete('/:id', param('id').isInt(), validate, (req, res, next) => {
-  try {
-    db.prepare('DELETE FROM bewerbungen WHERE id = ?').run(req.params.id);
-    res.json({ ok: true });
-  } catch(e) { next(e); }
+// ── GET /api/bewerbungen/:id ─────────────────────────────────────────────────
+router.get('/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM bewerbungen WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json(row);
 });
 
-router.get('/:id/kommentare', param('id').isInt(), validate, (req, res, next) => {
-  try {
-    res.json(db.prepare('SELECT * FROM kommentare WHERE bewerbung_id=? ORDER BY erstellt_am ASC').all(req.params.id));
-  } catch(e) { next(e); }
+// ── POST /api/bewerbungen ────────────────────────────────────────────────────
+router.post('/', (req, res) => {
+  const { titel, firma, ort, quelle, url, status, beworben_am, followup_datum, notizen } = req.body;
+  if (!titel || !firma) return res.status(400).json({ error: 'Titel und Firma sind Pflichtfelder.' });
+  const st = VALID_STATUS.includes(status) ? status : 'beworben';
+  const result = db.prepare(
+    `INSERT INTO bewerbungen (titel,firma,ort,quelle,url,status,beworben_am,followup_datum,notizen)
+     VALUES (?,?,?,?,?,?,?,?,?)`
+  ).run(titel, firma, ort||'', quelle||'', url||'', st, beworben_am||'', followup_datum||'', notizen||'');
+  res.status(201).json({ id: result.lastInsertRowid });
 });
 
-router.post('/:id/kommentare',
-  param('id').isInt(),
-  body('text').trim().notEmpty().isLength({ max: 2000 }),
-  validate,
-  (req, res, next) => {
-    try {
-      const r = db.prepare('INSERT INTO kommentare (bewerbung_id, text) VALUES (?, ?)').run(req.params.id, req.body.text);
-      res.json({ id: r.lastInsertRowid });
-    } catch(e) { next(e); }
-  }
-);
+// ── PUT /api/bewerbungen/:id ─────────────────────────────────────────────────
+router.put('/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM bewerbungen WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
+  const fields = ['titel','firma','ort','url','status','beworben_am','followup_datum','notizen','bewertung','archiviert'];
+  const updates = {};
+  fields.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+  if (updates.status && !VALID_STATUS.includes(updates.status)) delete updates.status;
+  if (!Object.keys(updates).length) return res.json(row);
+  const setClauses = Object.keys(updates).map(f => `${f} = ?`).join(', ');
+  db.prepare(`UPDATE bewerbungen SET ${setClauses}, aktualisiert_am = datetime('now') WHERE id = ?`)
+    .run(...Object.values(updates), req.params.id);
+  res.json(db.prepare('SELECT * FROM bewerbungen WHERE id = ?').get(req.params.id));
+});
 
-router.delete('/:bewId/kommentare/:id', param('bewId').isInt(), param('id').isInt(), validate, (req, res, next) => {
-  try {
-    db.prepare('DELETE FROM kommentare WHERE id=? AND bewerbung_id=?').run(req.params.id, req.params.bewId);
-    res.json({ ok: true });
-  } catch(e) { next(e); }
+// ── DELETE /api/bewerbungen/:id ──────────────────────────────────────────────
+router.delete('/:id', (req, res) => {
+  const row = db.prepare('SELECT id FROM bewerbungen WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
+  db.prepare('DELETE FROM bewerbungen WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── Kommentare ───────────────────────────────────────────────────────────────
+router.get('/:id/kommentare', (req, res) => {
+  res.json(db.prepare('SELECT * FROM kommentare WHERE bewerbung_id = ? ORDER BY erstellt_am ASC').all(req.params.id));
+});
+router.post('/:id/kommentare', (req, res) => {
+  const { text } = req.body;
+  if (!text?.trim()) return res.status(400).json({ error: 'Text fehlt.' });
+  const r = db.prepare('INSERT INTO kommentare (bewerbung_id, text) VALUES (?,?)').run(req.params.id, text.trim());
+  res.status(201).json({ id: r.lastInsertRowid });
+});
+router.delete('/:bewId/kommentare/:id', (req, res) => {
+  db.prepare('DELETE FROM kommentare WHERE id = ? AND bewerbung_id = ?').run(req.params.id, req.params.bewId);
+  res.json({ success: true });
 });
 
 module.exports = router;

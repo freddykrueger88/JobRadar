@@ -30,18 +30,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (ERLAUBTE_TYPEN.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Nicht erlaubter Dateityp. Erlaubt: PDF, DOCX, DOC, PNG, JPEG'));
-    }
+    if (ERLAUBTE_TYPEN.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Nicht erlaubter Dateityp. Erlaubt: PDF, DOCX, DOC, PNG, JPEG'));
   },
 });
 
+// ── GET /api/dokumente/stats ─────────────────────────────────────────────────
+router.get('/stats', (req, res) => {
+  const total = db.prepare('SELECT COUNT(*) as total FROM dokumente').get();
+  const byTyp = db.prepare('SELECT typ, COUNT(*) as c FROM dokumente GROUP BY typ').all();
+  res.json({ total: total.total, byTyp });
+});
+
 // ── GET /api/dokumente/:bewerbungId ─────────────────────────────────────────
-// Alle Dokumente einer Bewerbung auflisten
 router.get('/:bewerbungId', (req, res) => {
   const { bewerbungId } = req.params;
   const docs = db
@@ -51,81 +54,47 @@ router.get('/:bewerbungId', (req, res) => {
 });
 
 // ── POST /api/dokumente/:bewerbungId ────────────────────────────────────────
-// Datei hochladen und mit Bewerbung verknüpfen
 router.post('/:bewerbungId', upload.single('datei'), (req, res) => {
   const { bewerbungId } = req.params;
-
-  // Bewerbung muss existieren
   const bewerbung = db.prepare('SELECT id FROM bewerbungen WHERE id = ?').get(bewerbungId);
   if (!bewerbung) {
-    // Hochgeladene Datei wieder löschen
     if (req.file) fs.unlinkSync(req.file.path);
     return res.status(404).json({ error: 'Bewerbung nicht gefunden.' });
   }
-
-  if (!req.file) {
-    return res.status(400).json({ error: 'Keine Datei übermittelt.' });
-  }
-
+  if (!req.file) return res.status(400).json({ error: 'Keine Datei übermittelt.' });
   const { originalname, filename, mimetype, size } = req.file;
-  const typ = req.body.typ || 'sonstiges'; // z.B. anschreiben | lebenslauf | sonstiges
-
+  const typ = req.body.typ || 'sonstiges';
   const result = db
-    .prepare(
-      `INSERT INTO dokumente (bewerbung_id, dateiname, originalname, mimetype, groesse, typ)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
+    .prepare(`INSERT INTO dokumente (bewerbung_id, dateiname, originalname, mimetype, groesse, typ) VALUES (?,?,?,?,?,?)`)
     .run(bewerbungId, filename, originalname, mimetype, size, typ);
-
-  res.status(201).json({
-    id: result.lastInsertRowid,
-    bewerbung_id: Number(bewerbungId),
-    dateiname: filename,
-    originalname,
-    mimetype,
-    groesse: size,
-    typ,
-  });
+  res.status(201).json({ id: result.lastInsertRowid, bewerbung_id: Number(bewerbungId), dateiname: filename, originalname, mimetype, groesse: size, typ });
 });
 
 // ── GET /api/dokumente/download/:id ─────────────────────────────────────────
-// Datei herunterladen
 router.get('/download/:id', (req, res) => {
   const doc = db.prepare('SELECT * FROM dokumente WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Dokument nicht gefunden.' });
-
   const filePath = path.join(UPLOAD_DIR, doc.dateiname);
-  if (!fs.existsSync(filePath)) {
-    return res.status(410).json({ error: 'Datei nicht mehr vorhanden.' });
-  }
-
+  if (!fs.existsSync(filePath)) return res.status(410).json({ error: 'Datei nicht mehr vorhanden.' });
   res.setHeader('Content-Disposition', `attachment; filename="${doc.originalname}"`);
   res.setHeader('Content-Type', doc.mimetype);
   res.sendFile(filePath);
 });
 
 // ── DELETE /api/dokumente/:id ────────────────────────────────────────────────
-// Dokument löschen (DB-Eintrag + Datei)
 router.delete('/:id', (req, res) => {
   const doc = db.prepare('SELECT * FROM dokumente WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Dokument nicht gefunden.' });
-
-  // Datei vom Dateisystem löschen
   const filePath = path.join(UPLOAD_DIR, doc.dateiname);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   db.prepare('DELETE FROM dokumente WHERE id = ?').run(req.params.id);
   res.json({ success: true, deleted: req.params.id });
 });
 
-// ── Multer-Fehler abfangen ───────────────────────────────────────────────────
+// ── Multer-Fehler ────────────────────────────────────────────────────────────
 router.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ error: 'Datei zu groß. Maximum: 10 MB.' });
-    }
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Datei zu groß. Maximum: 10 MB.' });
     return res.status(400).json({ error: err.message });
   }
   if (err) return res.status(400).json({ error: err.message });
