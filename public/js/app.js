@@ -27,6 +27,64 @@ const today = () => new Date().toISOString().slice(0,10);
 
 let state = { jobs:[], profil:{}, vorlagen:[], bewerbungen:[] };
 
+// ── Ausgeblendet-Store ──
+const HIDDEN_KEY = 'jobradar_hidden_jobs';
+function hiddenJobs() {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveHidden(map) { localStorage.setItem(HIDDEN_KEY, JSON.stringify(map)); }
+function jobKey(j) { return (j.firma||'') + '||' + (j.titel||''); }
+
+window.hideJob = function(i, grund) {
+  if (!grund) { toast('Bitte einen Grund wählen', 'warn'); return; }
+  const j = state.jobs[i];
+  const map = hiddenJobs();
+  map[jobKey(j)] = { grund, titel: j.titel, firma: j.firma, ts: today() };
+  saveHidden(map);
+  toast('Ausgeblendet: ' + j.titel + ' (' + grund + ')');
+  log('Ausgeblendet: ' + j.titel + ' – ' + grund);
+  renderJobs();
+};
+
+window.unhideJob = function(key) {
+  const map = hiddenJobs();
+  const entry = map[key];
+  delete map[key];
+  saveHidden(map);
+  toast('Wieder eingeblendet' + (entry ? ': ' + entry.titel : ''));
+  renderJobs();
+  renderHiddenList();
+};
+
+window.clearAllHidden = function() {
+  if (!confirm('Alle ausgeblendeten Stellen zurücksetzen?')) return;
+  localStorage.removeItem(HIDDEN_KEY);
+  toast('Liste geleert');
+  renderJobs();
+  renderHiddenList();
+};
+
+function renderHiddenList() {
+  const el = $('hiddenList'); if (!el) return;
+  const map = hiddenJobs();
+  const entries = Object.entries(map);
+  if (!entries.length) {
+    el.innerHTML = '<p class="muted" style="font-size:14px">Keine ausgeblendeten Stellen.</p>';
+    return;
+  }
+  el.innerHTML = entries.map(([key, v]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
+      <div>
+        <strong>${esc(v.titel||'?')}</strong>
+        <span class="muted" style="font-size:13px"> · ${esc(v.firma||'')} · <em>${esc(v.grund||'')}</em></span>
+      </div>
+      <button class="btn small" onclick="unhideJob('${esc(key)}')">Einblenden</button>
+    </div>`
+  ).join('') +
+  `<div style="margin-top:10px"><button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="clearAllHidden()">Alle zurücksetzen</button></div>`;
+}
+
+// ── Toast ──
 let toastTimer;
 function toast(msg, type='success') {
   const el = $('toast');
@@ -54,7 +112,7 @@ function showTab(id){
   if(id==='vorlagen') loadVorlagen();
   if(id==='erfahrungen') window.loadErfahrungen && window.loadErfahrungen();
   if(id==='profil') loadProfil();
-  if(id==='suche') loadQuellenStatus();
+  if(id==='suche') { loadQuellenStatus(); renderHiddenList(); }
 }
 document.addEventListener('click',e=>{ if(e.target.dataset.tab) showTab(e.target.dataset.tab); });
 
@@ -73,7 +131,7 @@ function scoreJob(j){
 function getMatch(firma,titel){ return state.bewerbungen.find(b=>b.firma.toLowerCase().trim()===(firma||'').toLowerCase().trim()&&b.titel.toLowerCase().trim()===(titel||'').toLowerCase().trim())||state.bewerbungen.find(b=>b.firma.toLowerCase().trim()===(firma||'').toLowerCase().trim()); }
 
 async function requestNotifications(){ if(!('Notification' in window)) return; if(Notification.permission==='default') await Notification.requestPermission(); }
-function checkFollowupNotifications(){ if(Notification.permission!=='granted') return; const t=today(); state.bewerbungen.filter(b=>b.followup_datum===t&&b.status!=='angenommen'&&!b.archiviert).forEach(b=>new Notification('JobRadar',{body:`Follow-up f\u00e4llig: ${b.titel} bei ${b.firma}`})); }
+function checkFollowupNotifications(){ if(Notification.permission!=='granted') return; const t=today(); state.bewerbungen.filter(b=>b.followup_datum===t&&b.status!=='angenommen'&&!b.archiviert).forEach(b=>new Notification('JobRadar',{body:`Follow-up fällig: ${b.titel} bei ${b.firma}`})); }
 
 async function loadStats(){
   try {
@@ -100,7 +158,7 @@ async function loadBewerbungen(){
 function renderBewerbungen(){
   const el=$('bewerbungenList'); if(!el) return;
   const t=today();
-  if(!state.bewerbungen.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">\uD83D\uDCCB</div><h3>Noch keine Bewerbungen</h3><p>F\u00fcge deine erste Bewerbung manuell hinzu oder markiere eine Stelle aus der Suche.</p></div>`; return; }
+  if(!state.bewerbungen.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">\uD83D\uDCCB</div><h3>Noch keine Bewerbungen</h3><p>Füge deine erste Bewerbung manuell hinzu oder markiere eine Stelle aus der Suche.</p></div>`; return; }
   el.innerHTML=state.bewerbungen.map(b=>{
     const overdue=b.followup_datum&&b.followup_datum<t&&b.status!=='angenommen';
     const dueSoon=b.followup_datum&&b.followup_datum>=t&&b.followup_datum<=new Date(Date.now()+3*86400000).toISOString().slice(0,10)&&b.status!=='angenommen';
@@ -111,7 +169,7 @@ function renderBewerbungen(){
       </div>
       <div class="muted" style="margin-top:8px;font-size:14px">Beworben: ${esc(b.beworben_am||'-')}${b.followup_datum?' \u00b7 Follow-up: <strong>'+esc(b.followup_datum)+'</strong>':''}</div>
       ${b.notizen?`<div class="muted" style="margin-top:8px;font-size:14px;white-space:pre-wrap">${esc(b.notizen)}</div>`:''}
-      <div class="chips">${overdue?'<span class="chip" style="border-color:var(--error);color:var(--error)">\u26a0 \u00dcberf\u00e4llig</span>':''}${dueSoon?'<span class="chip" style="border-color:var(--warn);color:#8a6400">\u23f0 F\u00e4llig bald</span>':''}</div>
+      <div class="chips">${overdue?'<span class="chip" style="border-color:var(--error);color:var(--error)">\u26a0 Überfällig</span>':''}${dueSoon?'<span class="chip" style="border-color:var(--warn);color:#8a6400">\u23f0 Fällig bald</span>':''}</div>
       <div class="inline-edit" id="edit-${b.id}">
         <textarea id="notiz-${b.id}" rows="3" placeholder="Notizen...">${esc(b.notizen||'')}</textarea>
         <input id="followup-${b.id}" type="date" value="${esc(b.followup_datum||today())}">
@@ -128,8 +186,8 @@ function renderBewerbungen(){
         <button class="btn small" onclick="toggleEdit(${b.id})">&#9998; Bearbeiten</button>
         <button class="btn small" onclick="openTimeline(${b.id})">&#128203; Verlauf</button>
         <button class="btn small" onclick="archivieren(${b.id},${b.archiviert})">${b.archiviert?'Reaktivieren':'Archivieren'}</button>
-        <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="loeschen(${b.id},'${esc(b.titel)}')">&#x1F5D1; L\u00f6schen</button>
-        ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}
+        <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="loeschen(${b.id},'${esc(b.titel)}')">&#x1F5D1; Löschen</button>
+        ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
       </div>
     </article>`;
   }).join('');
@@ -151,9 +209,9 @@ async function archivieren(id,ist){
   catch(e) { toast('Fehler','error'); log('Archiv-Fehler: '+e.message); }
 }
 async function loeschen(id, titel){
-  if(!confirm('Bewerbung "'+titel+'" wirklich endg\u00fcltig l\u00f6schen?')) return;
-  try { await api('/api/bewerbungen/'+id,'DELETE'); loadBewerbungen(); toast('Gel\u00f6scht'); log('Gel\u00f6scht: '+titel); }
-  catch(e) { toast('Fehler beim L\u00f6schen','error'); log('Fehler: '+e.message); }
+  if(!confirm('Bewerbung "'+titel+'" wirklich endgültig löschen?')) return;
+  try { await api('/api/bewerbungen/'+id,'DELETE'); loadBewerbungen(); toast('Gelöscht'); log('Gelöscht: '+titel); }
+  catch(e) { toast('Fehler beim Löschen','error'); log('Fehler: '+e.message); }
 }
 window.loeschen=loeschen;
 
@@ -202,18 +260,18 @@ async function openTimeline(id){
     <div style="margin-bottom:16px">${badge(b.status)}${b.bewertung?` <span class="chip">\u2605 ${b.bewertung}/5</span>`:''}</div>
     <ul class="timeline" id="tl-${id}">${renderKommentare(kommentare,id)}</ul>
     <div class="comment-input">
-      <input id="ci-${id}" placeholder="Kommentar hinzuf\u00fcgen\u2026" onkeydown="if(event.key==='Enter') addKommentar(${id})">
+      <input id="ci-${id}" placeholder="Kommentar hinzufügen\u2026" onkeydown="if(event.key==='Enter') addKommentar(${id})">
       <button class="btn primary small" onclick="addKommentar(${id})">+</button>
     </div>
     <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn small" onclick="mailModal(${id},'${esc(b.titel)}')">\u2709 E-Mail vorbereiten</button>
-      ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}
+      ${b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
     </div>
   </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(id); });
 }
-function renderKommentare(list,id){ return list.length?list.map(k=>`<li><div>${esc(k.text)}<button class="del-comment" onclick="delKommentar(${id},${k.id})" title="L\u00f6schen">\u00d7</button></div><div class="ts">${esc(k.erstellt_am?.replace('T',' ').slice(0,16)||'')}</div></li>`).join(''):'<li style="color:var(--muted);padding-left:0">Noch keine Eintr\u00e4ge.</li>'; }
+function renderKommentare(list,id){ return list.length?list.map(k=>`<li><div>${esc(k.text)}<button class="del-comment" onclick="delKommentar(${id},${k.id})" title="Löschen">\u00d7</button></div><div class="ts">${esc(k.erstellt_am?.replace('T',' ').slice(0,16)||'')}</div></li>`).join(''):'<li style="color:var(--muted);padding-left:0">Noch keine Einträge.</li>'; }
 async function addKommentar(id){ const inp=$('ci-'+id); if(!inp||!inp.value.trim()) return; await api('/api/bewerbungen/'+id+'/kommentare','POST',{text:inp.value.trim()}); inp.value=''; const list=await api('/api/bewerbungen/'+id+'/kommentare'); $('tl-'+id).innerHTML=renderKommentare(list,id); }
 async function delKommentar(bewId,id){ await api('/api/bewerbungen/'+bewId+'/kommentare/'+id,'DELETE'); const list=await api('/api/bewerbungen/'+bewId+'/kommentare'); $('tl-'+bewId).innerHTML=renderKommentare(list,bewId); }
 function closeModal(id){ const m=$('modal-'+id); if(m) m.remove(); }
@@ -230,21 +288,81 @@ async function suche(){
   const ort=ortInput||profil.ort||'Remote';
   const umkreis=$('sucheUmkreis')?.value||'0';
   setLoading(true);
-  log('Suche l\u00e4uft: '+quelle+(umkreis>0?' \u2022 '+ort+' ('+umkreis+' km)':' \u2022 '+ort));
+  log('Suche läuft: '+quelle+(umkreis>0?' \u2022 '+ort+' ('+umkreis+' km)':' \u2022 '+ort));
   try{
     const data=await api('/api/suche?'+new URLSearchParams({quelle,rolle:profil.rollen||'Linux Administrator',ort,count,umkreis}));
     if((data.errors||[]).length) data.errors.forEach(e=>log('Fehler: '+e));
     const rollen=(profil.rollen||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
     state.jobs=(data.results||[]).filter(j=>{ const hay=(j.titel+' '+(j.firma||'')+' '+(j.beschreibung||'')+' '+(j.ort||'')+' '+(j.tags||[]).join(' ')).toLowerCase(); return rollen.length===0||rollen.some(r=>hay.includes(r.split(' ')[0])); }).map(j=>({...j,score:scoreJob(j)})).sort((a,b)=>b.score-a.score).slice(0,parseInt(count,10)||15);
-    renderJobs(); log(state.jobs.length+' Treffer nach Filter.');
+    renderJobs(); renderHiddenList(); log(state.jobs.length+' Treffer nach Filter.');
   }catch(e){ log('Fehler bei Suche: '+e.message); }
   setLoading(false);
 }
 
+// Ausblend-Gründe
+const HIDE_GRUENDE = [
+  'Ausbildung / Lehrstelle',
+  'Studium erforderlich',
+  'Kein Homeoffice',
+  'Zu weit entfernt',
+  'Gehalt zu niedrig',
+  'Falsche Branche',
+  'Bereits bekannt',
+  'Sonstiges'
+];
+
 function renderJobs(){
   const el=$('jobsList'); if(!el) return;
-  if(!state.jobs.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">\uD83D\uDD0D</div><h3>Keine Treffer</h3><p>Passe deine Rollen im Profil an und starte eine neue Suche.</p></div>`; return; }
-  el.innerHTML=state.jobs.map((j,i)=>{ const match=getMatch(j.firma,j.titel); return `<article class="job"><div class="jobhead"><div><strong>${esc(j.titel)}</strong><div class="muted" style="margin-top:4px">${esc(j.firma)} \u00b7 ${esc(j.ort||'')} \u00b7 <em>${esc(j.quelle||'')}</em></div></div><div class="score">${j.score}%</div></div>${match?`<div style="margin-top:10px">${badge(match.status)} <span class="muted" style="font-size:14px">Bereits beworben</span></div>`:''}<div class="chips">${(j.tags||[]).slice(0,6).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div><div class="actions"><button class="btn primary small" onclick="kiAnschreibenErzeugen(${i})">&#x2728; KI-Anschreiben</button><button class="btn small" onclick="alsBeworben(${i})">Als beworben markieren</button>${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn small">Stelle \u00f6ffnen</a>`:''}</div></article>`; }).join('');
+  const map = hiddenJobs();
+  const showHidden = $('toggleHidden')?.checked;
+  const visible = state.jobs.filter(j => showHidden || !map[jobKey(j)]);
+  const hiddenCount = state.jobs.filter(j => map[jobKey(j)]).length;
+
+  // Zähler-Hinweis
+  const hint = $('hiddenHint');
+  if (hint) hint.textContent = hiddenCount > 0 ? hiddenCount + ' Stelle' + (hiddenCount>1?'n':'') + ' ausgeblendet' : '';
+
+  if(!visible.length){
+    el.innerHTML = hiddenCount
+      ? `<div class="empty"><div class="empty-icon">🙈</div><h3>${hiddenCount} Stelle${hiddenCount>1?'n':''} ausgeblendet</h3><p>Aktiviere "Ausgeblendete anzeigen" um sie wieder zu sehen.</p></div>`
+      : `<div class="empty"><div class="empty-icon">\uD83D\uDD0D</div><h3>Keine Treffer</h3><p>Passe deine Rollen im Profil an und starte eine neue Suche.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = visible.map((j,vi) => {
+    const origIdx = state.jobs.indexOf(j);
+    const isHidden = !!map[jobKey(j)];
+    const match = getMatch(j.firma, j.titel);
+    const grundOptions = HIDE_GRUENDE.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+    return `<article class="job${isHidden?' job-hidden':''}">
+      <div class="jobhead">
+        <div>
+          <strong>${esc(j.titel)}</strong>
+          ${isHidden?`<span class="chip" style="margin-left:8px;border-color:var(--muted);color:var(--muted);font-size:11px">🙈 ${esc(map[jobKey(j)].grund)}</span>`:''}
+          <div class="muted" style="margin-top:4px">${esc(j.firma)} \u00b7 ${esc(j.ort||'')} \u00b7 <em>${esc(j.quelle||'')}</em></div>
+        </div>
+        <div class="score">${j.score}%</div>
+      </div>
+      ${match?`<div style="margin-top:10px">${badge(match.status)} <span class="muted" style="font-size:14px">Bereits beworben</span></div>`:''}
+      <div class="chips">${(j.tags||[]).slice(0,6).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+      <div class="actions">
+        ${!isHidden ? `
+          <button class="btn primary small" onclick="kiAnschreibenErzeugen(${origIdx})">&#x2728; KI-Anschreiben</button>
+          <button class="btn small" onclick="alsBeworben(${origIdx})">Als beworben markieren</button>
+          <div class="hide-row">
+            <select id="hideGrund-${origIdx}" class="hide-select">
+              <option value="">Grund wählen…</option>
+              ${grundOptions}
+            </select>
+            <button class="btn small" style="color:var(--muted);border-color:var(--muted)" onclick="hideJob(${origIdx}, document.getElementById('hideGrund-${origIdx}').value)">🙈 Ausblenden</button>
+          </div>
+        ` : `
+          <button class="btn small" onclick="unhideJob('${esc(jobKey(j))}')">👁 Wieder einblenden</button>
+        `}
+        ${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn small">Stelle öffnen</a>`:''}
+      </div>
+    </article>`;
+  }).join('');
 }
 
 window.alsBeworben=async(i)=>{
@@ -286,7 +404,7 @@ async function loadVorlagen(){
         el.innerHTML = state.vorlagen.map(v => `<div class="card" style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <strong>${esc(v.name)}</strong>
-            <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="deleteVorlage(${v.id})">\uD83D\uDDD1 L\u00f6schen</button>
+            <button class="btn small" style="color:var(--error);border-color:var(--error)" onclick="deleteVorlage(${v.id})">\uD83D\uDDD1 Löschen</button>
           </div>
           <div class="chips" style="margin-top:8px">
             <span class="chip">${esc(tonLabel[v.ton]||v.ton||'formell')}</span>
@@ -306,7 +424,7 @@ async function loadVorlagen(){
 }
 
 window.deleteVorlage = async(id) => {
-  try { await api('/api/vorlagen/'+id,'DELETE'); loadVorlagen(); toast('Stil gel\u00f6scht'); }
+  try { await api('/api/vorlagen/'+id,'DELETE'); loadVorlagen(); toast('Stil gelöscht'); }
   catch(e) { toast('Fehler','error'); log('Fehler: '+e.message); }
 };
 
@@ -354,32 +472,18 @@ async function kiAnschreibenErzeugen(jobIndex) {
   const gen = $('kiGenerating'); const preview = $('letterPreview');
   const model = $('kiModel')?.value || 'mistral';
   const stilId = $('vorlagenSelect')?.value ? parseInt($('vorlagenSelect').value) : null;
-
-  // Erfahrungs-Kontext aus erfahrungen.js holen
-  const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function')
-    ? window.getErfahrungenKontext() : '';
-
-  if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche w\u00e4hlen','warn'); return; }
+  const erfahrungenKontext = (typeof window.getErfahrungenKontext === 'function') ? window.getErfahrungenKontext() : '';
+  if (!titel) { toast('Bitte zuerst eine Stelle aus der Suche wählen','warn'); return; }
   if (gen) gen.classList.add('active');
   if (preview) preview.value = '';
   const stilName = stilId ? (state.vorlagen.find(v=>v.id===stilId)?.name || '') : '';
-  log('KI generiert Anschreiben f\u00fcr: ' + titel + (stilName?' [Stil: '+stilName+']':'') +
-    (erfahrungenKontext?' [+Erfahrungen]':'') + ' \u2026');
+  log('KI generiert Anschreiben für: ' + titel + (stilName?' [Stil: '+stilName+']':'') + (erfahrungenKontext?' [+Erfahrungen]':'') + ' \u2026');
   toast('KI arbeitet \u2026 bitte warten (bis zu 2 Min beim Kaltstart)', 'warn');
   try {
     const res = await fetchWithTimeout('/api/ki/anschreiben', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        titel, firma,
-        ort: j?.ort||'',
-        beschreibung: j?.beschreibung||'',
-        tags: j?.tags||[],
-        profil: state.profil,
-        model,
-        stilId,
-        erfahrungenKontext   // <-- neu: strukturierter Hintergrund
-      })
+      body: JSON.stringify({ titel, firma, ort: j?.ort||'', beschreibung: j?.beschreibung||'', tags: j?.tags||[], profil: state.profil, model, stilId, erfahrungenKontext })
     }, 195000);
     const data = await res.json();
     if (data.error) { toast('KI-Fehler: '+data.error,'error'); log('Fehler: ' + data.error); return; }
@@ -403,8 +507,7 @@ async function kiFeedback() {
   toast('KI analysiert \u2026 bitte warten', 'warn');
   try {
     const res = await fetchWithTimeout('/api/ki/feedback', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({anschreiben:text,stelle:$('letterSubject')?.value||''})
     }, 195000);
     const data = await res.json();
@@ -425,7 +528,7 @@ async function loadQuellenStatus() {
       const hint = q.keyRequired && !q.configured ? ' (Key fehlt)' : '';
       return `<span class="chip" style="border-color:${color};color:${color}">${esc(q.name)}${hint}</span>`;
     }).join('') + '</div>';
-  } catch(e) { console.warn('Quellen-Status nicht verf\u00fcgbar'); }
+  } catch(e) { console.warn('Quellen-Status nicht verfügbar'); }
 }
 
 async function init(){
@@ -437,6 +540,7 @@ async function init(){
   $('filterStatus')?.addEventListener('change', loadBewerbungen);
   $('filterArchiv')?.addEventListener('change', loadBewerbungen);
   $('filterFirma')?.addEventListener('input', loadBewerbungen);
+  $('toggleHidden')?.addEventListener('change', renderJobs);
   requestNotifications();
   loadKiModels();
   loadQuellenStatus();
