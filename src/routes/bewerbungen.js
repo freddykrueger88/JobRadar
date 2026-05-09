@@ -22,7 +22,8 @@ router.get('/stats/overview', (req, res) => {
   const total   = db.prepare('SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0').get().c;
   const overdue = db.prepare("SELECT COUNT(*) as c FROM bewerbungen WHERE archiviert=0 AND status!='angenommen' AND followup_datum < date('now')").get().c;
   const byStatus = db.prepare('SELECT status, COUNT(*) as c FROM bewerbungen WHERE archiviert=0 GROUP BY status').all();
-  res.json({ total, overdue, byStatus });
+  const dokCount = db.prepare('SELECT COUNT(*) as c FROM dokumente').get().c;
+  res.json({ total, overdue, byStatus, dokCount });
 });
 
 // ── GET /api/bewerbungen/stats/verlauf ──────────────────────────────────────
@@ -59,13 +60,13 @@ router.get('/:id', (req, res) => {
 
 // ── POST /api/bewerbungen ────────────────────────────────────────────────────
 router.post('/', (req, res) => {
-  const { titel, firma, ort, quelle, url, status, beworben_am, followup_datum, notizen } = req.body;
+  const { titel, firma, ort, quelle, url, status, beworben_am, followup_datum, notizen, stellenbeschreibung } = req.body;
   if (!titel || !firma) return res.status(400).json({ error: 'Titel und Firma sind Pflichtfelder.' });
   const st = VALID_STATUS.includes(status) ? status : 'beworben';
   const result = db.prepare(
-    `INSERT INTO bewerbungen (titel,firma,ort,quelle,url,status,beworben_am,followup_datum,notizen)
-     VALUES (?,?,?,?,?,?,?,?,?)`
-  ).run(titel, firma, ort||'', quelle||'', url||'', st, beworben_am||'', followup_datum||'', notizen||'');
+    `INSERT INTO bewerbungen (titel,firma,ort,quelle,url,status,beworben_am,followup_datum,notizen,stellenbeschreibung)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`
+  ).run(titel, firma, ort||'', quelle||'', url||'', st, beworben_am||'', followup_datum||'', notizen||'', stellenbeschreibung||null);
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
@@ -73,7 +74,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM bewerbungen WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  const fields = ['titel','firma','ort','url','status','beworben_am','followup_datum','notizen','bewertung','archiviert'];
+  const fields = ['titel','firma','ort','url','status','beworben_am','followup_datum','notizen','bewertung','archiviert','stellenbeschreibung','lebenslauf_id'];
   const updates = {};
   fields.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
   if (updates.status && !VALID_STATUS.includes(updates.status)) delete updates.status;

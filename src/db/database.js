@@ -23,6 +23,7 @@ db.exec(`
     bewertung INTEGER,
     notizen TEXT,
     anschreiben TEXT,
+    stellenbeschreibung TEXT,
     archiviert INTEGER DEFAULT 0,
     erstellt_am TEXT DEFAULT (datetime('now')),
     aktualisiert_am TEXT DEFAULT (datetime('now'))
@@ -82,6 +83,16 @@ db.exec(`
     hochgeladen_am TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS lebenslauf_vault (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dateiname TEXT NOT NULL,
+    originalname TEXT NOT NULL,
+    groesse INTEGER NOT NULL,
+    notiz TEXT,
+    hochgeladen_am TEXT DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_bew_status     ON bewerbungen(status);
   CREATE INDEX IF NOT EXISTS idx_bew_archiviert ON bewerbungen(archiviert);
   CREATE INDEX IF NOT EXISTS idx_bew_followup   ON bewerbungen(followup_datum);
@@ -96,7 +107,6 @@ try { db.exec(`ALTER TABLE vorlagen ADD COLUMN laenge TEXT DEFAULT 'mittel'`); }
 try { db.exec(`ALTER TABLE vorlagen ADD COLUMN hinweise TEXT`); } catch(e) {}
 try { db.exec(`CREATE TABLE IF NOT EXISTS anschreiben_verlauf (id INTEGER PRIMARY KEY AUTOINCREMENT, titel TEXT, firma TEXT, text TEXT, model TEXT, stil TEXT, erstellt_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
 try { db.exec(`CREATE TABLE IF NOT EXISTS erfahrungen (id INTEGER PRIMARY KEY, skills TEXT DEFAULT '[]', stationen TEXT DEFAULT '[]', zertifikate TEXT DEFAULT '[]', aktualisiert_am TEXT DEFAULT (datetime('now')))`); } catch(e) {}
-// Migration: Dokumente-Tabelle für bestehende DBs
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS dokumente (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +120,21 @@ try {
   )`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_dok_bew_id ON dokumente(bewerbung_id)`);
 } catch(e) {}
+// Block 1: Stellenanzeige-Snapshot
+try { db.exec(`ALTER TABLE bewerbungen ADD COLUMN stellenbeschreibung TEXT`); } catch(e) {}
+// Block 2: Lebenslauf-Vault
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS lebenslauf_vault (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dateiname TEXT NOT NULL,
+    originalname TEXT NOT NULL,
+    groesse INTEGER NOT NULL,
+    notiz TEXT,
+    hochgeladen_am TEXT DEFAULT (datetime('now'))
+  )`);
+} catch(e) {}
+try { db.exec(`ALTER TABLE bewerbungen ADD COLUMN lebenslauf_id INTEGER REFERENCES lebenslauf_vault(id) ON DELETE SET NULL`); } catch(e) {}
 
 // Standard-Vorlagen
 const count = db.prepare('SELECT COUNT(*) as c FROM vorlagen').get();
