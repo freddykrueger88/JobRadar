@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { describe, it, before } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 
 process.env.DB_PATH  = ':memory:';
 process.env.NODE_ENV = 'test';
