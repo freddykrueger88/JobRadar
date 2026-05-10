@@ -5,7 +5,7 @@ const express    = require('express');
 const path       = require('path');
 const rateLimit  = require('express-rate-limit');
 const helmet     = require('helmet');
-const { version, name } = require('../package.json');
+const { version } = require('../package.json');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Datenbank + Migrationen beim Start
@@ -47,24 +47,27 @@ app.get('/health', (req, res) => {
 });
 
 // ── API-Routen
-app.use('/api/bewerbungen',  require('./routes/bewerbungen'));
-app.use('/api/bewerbungen',  require('./routes/dokumente'));   // /:id/dokumente via mergeParams
-app.use('/api/suche',        require('./routes/suche'));
-app.use('/api/ki',           require('./routes/ki'));
-app.use('/api/profil',       require('./routes/profil'));
-app.use('/api/erfahrungen',  require('./routes/erfahrungen'));
-app.use('/api/dokumente',    require('./routes/dokumente'));
-app.use('/api/vault',        require('./routes/vault'));
-app.use('/api/import',       require('./routes/import'));
-app.use('/api/einstellungen',require('./routes/einstellungen'));
-app.use('/api/push',         require('./routes/push'));
+app.use('/api/bewerbungen',   require('./routes/bewerbungen'));
+app.use('/api/bewerbungen/:id/dokumente', require('./routes/dokumente'));  // mergeParams
+app.use('/api/suche',         require('./routes/suche'));
+app.use('/api/ki',            require('./routes/ki'));
+app.use('/api/profil',        require('./routes/profil'));
+app.use('/api/erfahrungen',   require('./routes/erfahrungen'));
+app.use('/api/vault',         require('./routes/vault'));
+app.use('/api/import',        require('./routes/import'));
+app.use('/api/einstellungen', require('./routes/einstellungen'));
+app.use('/api/push',          require('./routes/push'));
+app.use('/api/vorlagen',      require('./routes/vorlagen'));
 
-// ── Fehler-Handler
+// ── SPA-Fallback (vor den Error-Handlern, nach allen API-Routen)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// ── Fehler-Handler (immer zuletzt)
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-// ── SPA-Fallback
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 
 if (require.main === module) {
   app.listen(PORT, () => console.log(`🎯 JobRadar v${version} läuft auf Port ${PORT}`));

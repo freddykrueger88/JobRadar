@@ -1,3 +1,33 @@
+# Dependencies
 node_modules/
-data/
+
+# Datenbank
+*.db
+*.db-shm
+*.db-wal
+
+# Umgebungsvariablen
 .env
+
+# Upload-Verzeichnisse
+data/
+uploads/
+vault/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
