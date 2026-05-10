@@ -1,16 +1,25 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-theme="dark">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="theme-color" content="#01696f"/>
+  <meta name="theme-color" content="#0f172a"/>
   <title>JobRadar</title>
   <link rel="stylesheet" href="/css/style.css"/>
   <link rel="stylesheet" href="/css/kanban.css"/>
   <link rel="stylesheet" href="/css/bottom-nav.css"/>
+  <link rel="stylesheet" href="/css/settings.css"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
+  <script>
+    // Dark Mode sofort setzen – verhindert weißen Flash
+    (function(){
+      var m = localStorage.getItem('jr_mode') || 'dark';
+      if (m === 'dark')   document.documentElement.setAttribute('data-theme', 'dark');
+      if (m === 'server') document.documentElement.setAttribute('data-theme', 'server');
+    })();
+  </script>
 </head>
 <body>
 <div class="wrap">
@@ -67,7 +76,6 @@
     </button>
   </nav>
 
-  <!-- Mehr-Drawer -->
   <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
   <div class="bottom-nav-drawer" id="bottomNavDrawer">
     <div class="drawer-grid">
@@ -293,8 +301,8 @@
       <div class="card"><h2>🌟 Erscheinungsbild</h2>
         <div class="settings-section"><label class="settings-row-label">Modus</label>
           <div class="theme-toggle-row">
-            <button class="theme-toggle-btn active" id="lightModeBtn" onclick="setMode('light')">☀️ Light</button>
-            <button class="theme-toggle-btn" id="darkModeBtn" onclick="setMode('dark')">🌙 Dark</button>
+            <button class="theme-toggle-btn" id="lightModeBtn" onclick="setMode('light')">☀️ Light</button>
+            <button class="theme-toggle-btn active" id="darkModeBtn" onclick="setMode('dark')">🌙 Dark</button>
             <button class="theme-toggle-btn" id="serverModeBtn" onclick="setMode('server')">🟢 Server Room</button>
           </div>
         </div>
@@ -306,7 +314,6 @@
             <option value="orange">🟠 Orange</option>
             <option value="rose">🌸 Rosé</option>
           </select>
-          <p class="muted" style="font-size:12px;margin-top:6px">Farbthema gilt nur für Light- und Dark-Modus. Server Room hat ein eigenes Grün.</p>
         </div>
       </div>
       <div class="card"><h2>🔍 Standard-Sucheinstellungen</h2><div class="stack">
@@ -323,7 +330,7 @@
       </div></div>
       <div class="card"><h2>📋 Bewerbungen</h2><div class="stack">
         <div class="row">
-          <div><label>Auto-Archivierung nach (Tagen)</label><input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert"><p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p></div>
+          <div><label>Auto-Archivierung nach (Tagen)</label><input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert"></div>
           <div><label>Standard Follow-up nach (Tagen)</label><input id="setFollowupDays" type="number" min="1" max="60" value="14"></div>
         </div>
         <button class="btn primary" onclick="saveSettingsBlock('bewerbungen')">Speichern</button>
@@ -422,40 +429,40 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 });
 (function() {
-  const lightBtn = document.getElementById('lightModeBtn');
-  const darkBtn  = document.getElementById('darkModeBtn');
+  const lightBtn  = document.getElementById('lightModeBtn');
+  const darkBtn   = document.getElementById('darkModeBtn');
   const serverBtn = document.getElementById('serverModeBtn');
   const themeSelect = document.getElementById('themeSelect');
   const themes = {
-    teal:   { primary: '#01696f', primaryHover: '#015257' },
-    blue:   { primary: '#1d4ed8', primaryHover: '#1e40af' },
-    purple: { primary: '#7c3aed', primaryHover: '#6d28d9' },
-    orange: { primary: '#ea580c', primaryHover: '#c2410c' },
-    rose:   { primary: '#e11d48', primaryHover: '#be123c' }
+    teal:   { primary: '#14b8a6', primaryHover: '#0d9488' },
+    blue:   { primary: '#3b82f6', primaryHover: '#2563eb' },
+    purple: { primary: '#a855f7', primaryHover: '#9333ea' },
+    orange: { primary: '#f97316', primaryHover: '#ea580c' },
+    rose:   { primary: '#f43f5e', primaryHover: '#e11d48' }
   };
-  const savedMode  = localStorage.getItem('jr_mode')  || 'light';
+  const savedMode  = localStorage.getItem('jr_mode')  || 'dark';
   const savedTheme = localStorage.getItem('jr_theme') || 'teal';
   applyMode(savedMode);
   if (savedMode !== 'server') applyTheme(savedTheme);
   if (themeSelect) themeSelect.value = savedTheme;
-  fetch('/api/version').then(r=>r.json()).then(d=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version '+(d.version||'–'); }).catch(()=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version 2.0.0'; });
+  fetch('/api/version').then(r=>r.json()).then(d=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version '+(d.version||'–'); }).catch(()=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version 2.1.0'; });
   window.setMode = function(mode) { applyMode(mode); localStorage.setItem('jr_mode', mode); };
   window.setTheme = function(theme) { applyTheme(theme); localStorage.setItem('jr_theme', theme); };
   function applyMode(mode) {
     document.documentElement.removeAttribute('data-theme');
-    if (mode==='dark') document.documentElement.setAttribute('data-theme','dark');
-    if (mode==='server') document.documentElement.setAttribute('data-theme','server');
-    [lightBtn,darkBtn,serverBtn].forEach(b=>b&&b.classList.remove('active'));
-    if (mode==='dark'&&darkBtn) darkBtn.classList.add('active');
-    else if (mode==='server'&&serverBtn) serverBtn.classList.add('active');
+    if (mode === 'dark')   document.documentElement.setAttribute('data-theme', 'dark');
+    if (mode === 'server') document.documentElement.setAttribute('data-theme', 'server');
+    [lightBtn, darkBtn, serverBtn].forEach(b => b && b.classList.remove('active'));
+    if (mode === 'dark'   && darkBtn)   darkBtn.classList.add('active');
+    else if (mode === 'server' && serverBtn) serverBtn.classList.add('active');
     else if (lightBtn) lightBtn.classList.add('active');
   }
   function applyTheme(theme) {
-    const t=themes[theme]||themes.teal;
-    if (localStorage.getItem('jr_mode')==='server') return;
-    document.documentElement.style.setProperty('--primary',t.primary);
-    document.documentElement.style.setProperty('--primary-hover',t.primaryHover);
-    if (themeSelect) themeSelect.value=theme;
+    const t = themes[theme] || themes.teal;
+    if (localStorage.getItem('jr_mode') === 'server') return;
+    document.documentElement.style.setProperty('--primary', t.primary);
+    document.documentElement.style.setProperty('--primary-hover', t.primaryHover);
+    if (themeSelect) themeSelect.value = theme;
   }
 })();
 </script>
