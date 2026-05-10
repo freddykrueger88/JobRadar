@@ -13,8 +13,18 @@ const db = require('./adapter');
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
+// Fehler die als "bereits erledigt" gelten und keinen Crash auslösen
+const IGNORABLE = [
+  'duplicate column name',
+  'already exists',
+  'table already exists',
+];
+
+function isIgnorable(msg) {
+  return IGNORABLE.some(s => msg.toLowerCase().includes(s));
+}
+
 function runMigrations() {
-  // Meta-Tabelle anlegen falls nicht vorhanden
   db.exec(`
     CREATE TABLE IF NOT EXISTS _migrations (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +33,6 @@ function runMigrations() {
     );
   `);
 
-  // Alle .sql-Dateien alphabetisch sortiert
   const files = fs
     .readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
@@ -48,8 +57,14 @@ function runMigrations() {
       console.log(`[migrate] ✅ ${file}`);
       ran++;
     } catch (err) {
-      console.error(`[migrate] ❌ Fehler in ${file}:`, err.message);
-      process.exit(1);
+      if (isIgnorable(err.message)) {
+        db.run('INSERT OR IGNORE INTO _migrations (datei) VALUES (?)', [file]);
+        console.warn(`[migrate] ⚠️  ${file} übersprungen (bereits vorhanden): ${err.message}`);
+        ran++;
+      } else {
+        console.error(`[migrate] ❌ Fehler in ${file}:`, err.message);
+        process.exit(1);
+      }
     }
   }
 
