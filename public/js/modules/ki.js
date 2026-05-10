@@ -9,9 +9,9 @@ const kiModule = (() => {
   }
 
   function _renderShell() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('ki').innerHTML = `
       <div class="ki-page">
-        <h1 class="page-title">🤖 KI-Anschreiben</h1>
+        <h1 class="page-title">\uD83E\uDD16 KI-Anschreiben</h1>
 
         <div class="card ki-form-card">
           <div class="form-row">
@@ -37,15 +37,15 @@ const kiModule = (() => {
             </div>
           </div>
           <div id="ki-status-info" class="ki-status-info"></div>
-          <button id="btn-ki-generieren" class="btn btn--primary btn--lg">✨ Anschreiben generieren</button>
+          <button id="btn-ki-generieren" class="btn btn--primary btn--lg">\u2728 Anschreiben generieren</button>
         </div>
 
         <div id="ki-ergebnis" class="card ki-ergebnis" style="display:none">
           <div class="ki-ergebnis__header">
             <h2>Generiertes Anschreiben</h2>
             <div class="ki-ergebnis__actions">
-              <button id="btn-ki-kopieren" class="btn btn--sm">📋 Kopieren</button>
-              <button id="btn-ki-pdf"      class="btn btn--sm">📄 PDF</button>
+              <button id="btn-ki-kopieren" class="btn btn--sm">\uD83D\uDCCB Kopieren</button>
+              <button id="btn-ki-pdf"      class="btn btn--sm">\uD83D\uDCC4 PDF</button>
             </div>
           </div>
           <textarea id="ki-text" class="input textarea" rows="15"></textarea>
@@ -67,10 +67,10 @@ const kiModule = (() => {
       select.innerHTML = modelle.map(m =>
         `<option value="${ui.escHtml(m)}" ${m === cfg.ki_modell ? 'selected' : ''}>${ui.escHtml(m)}</option>`
       ).join('');
-      info.innerHTML = `<span class="badge badge--success">✅ Ollama verbunden — ${modelle.length} Modell(e)</span>`;
+      info.innerHTML = `<span class="badge badge--success">\u2705 Ollama verbunden — ${modelle.length} Modell(e)</span>`;
     } catch (e) {
       select.innerHTML = '<option value="">Ollama nicht erreichbar</option>';
-      info.innerHTML   = `<span class="badge badge--error">❌ ${ui.escHtml(e.message)}</span>`;
+      info.innerHTML   = `<span class="badge badge--error">\u274C ${ui.escHtml(e.message)}</span>`;
     }
   }
 
@@ -84,27 +84,22 @@ const kiModule = (() => {
           <span class="ki-verlauf-item__date">${ui.formatDate(v.erstellt_am)}</span>
           <strong>${ui.escHtml(v.firma)} — ${ui.escHtml(v.titel)}</strong>
           <span class="badge">${ui.escHtml(v.model)}</span>
-          <button class="btn btn--xs" data-action="verlauf-laden" data-text="${ui.escHtml(v.text)}">🗂 Laden</button>
+          <button class="btn btn--xs" data-action="verlauf-laden" data-text="${ui.escHtml(v.text)}">\uD83D\uDDC2 Laden</button>
         </li>`).join('');
     } catch (_) {}
   }
 
   function _bindEvents() {
     document.getElementById('btn-ki-generieren')?.addEventListener('click', async () => {
-      const titel       = document.getElementById('ki-titel').value.trim();
-      const firma       = document.getElementById('ki-firma').value.trim();
+      const titel        = document.getElementById('ki-titel').value.trim();
+      const firma        = document.getElementById('ki-firma').value.trim();
       const beschreibung = document.getElementById('ki-beschreibung').value.trim();
-      const modell      = document.getElementById('ki-modell').value;
-
+      const modell       = document.getElementById('ki-modell').value;
       if (!titel || !firma) { ui.warning('Stelle und Firma sind Pflichtfelder.'); return; }
-
-      // Gewähltes Modell in Einstellungen speichern
       if (modell) await api.einstellungen.update({ ki_modell: modell }).catch(() => {});
-
       const btn = document.getElementById('btn-ki-generieren');
       btn.disabled    = true;
-      btn.textContent = '⏳ Generiere…';
-
+      btn.textContent = '\u23F3 Generiere…';
       try {
         const { text } = await api.ki.generieren({ titel, firma, stellenbeschreibung: beschreibung });
         document.getElementById('ki-text').value = text;
@@ -116,24 +111,20 @@ const kiModule = (() => {
         ui.error('Fehler: ' + e.message);
       } finally {
         btn.disabled    = false;
-        btn.textContent = '✨ Anschreiben generieren';
+        btn.textContent = '\u2728 Anschreiben generieren';
       }
     });
-
     document.getElementById('btn-ki-kopieren')?.addEventListener('click', async () => {
       const text = document.getElementById('ki-text').value;
       await navigator.clipboard.writeText(text).catch(() => {});
       ui.success('Kopiert!');
     });
-
     document.getElementById('btn-ki-pdf')?.addEventListener('click', () => {
       const text = document.getElementById('ki-text').value;
       const win  = window.open('', '_blank');
       win.document.write(`<pre style="font-family:serif;font-size:14px;line-height:1.6;padding:2cm">${ui.escHtml(text)}</pre>`);
       win.print();
     });
-
-    // Verlauf-Eintrag laden
     document.getElementById('ki-verlauf')?.addEventListener('click', e => {
       const btn = e.target.closest('[data-action="verlauf-laden"]');
       if (!btn) return;

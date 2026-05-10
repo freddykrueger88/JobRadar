@@ -9,21 +9,21 @@ const einstellungenModule = (() => {
   }
 
   function _render(cfg) {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('einstellungen').innerHTML = `
       <div class="einstellungen-page">
-        <h1 class="page-title">⚙️ Einstellungen</h1>
+        <h1 class="page-title">\u2699\uFE0F Einstellungen</h1>
 
         <form id="settings-form" class="form">
 
           <div class="card">
-            <h2 class="card__title">🤖 KI-Einstellungen</h2>
+            <h2 class="card__title">\uD83E\uDD16 KI-Einstellungen</h2>
             <div class="form-row">
               <div class="form-group">
                 <label>Stil</label>
                 <select name="ki_stil" class="input">
-                  <option value="formell"  ${cfg.ki_stil === 'formell'  ? 'selected' : ''}>Formell & professionell</option>
-                  <option value="modern"   ${cfg.ki_stil === 'modern'   ? 'selected' : ''}>Modern & direkt</option>
-                  <option value="kurz"     ${cfg.ki_stil === 'kurz'     ? 'selected' : ''}>Kurz & prägnant</option>
+                  <option value="formell"  ${cfg.ki_stil === 'formell'  ? 'selected' : ''}>Formell &amp; professionell</option>
+                  <option value="modern"   ${cfg.ki_stil === 'modern'   ? 'selected' : ''}>Modern &amp; direkt</option>
+                  <option value="kurz"     ${cfg.ki_stil === 'kurz'     ? 'selected' : ''}>Kurz &amp; prägnant</option>
                 </select>
               </div>
               <div class="form-group">
@@ -49,7 +49,7 @@ const einstellungenModule = (() => {
           </div>
 
           <div class="card">
-            <h2 class="card__title">🔔 Benachrichtigungen</h2>
+            <h2 class="card__title">\uD83D\uDD14 Benachrichtigungen</h2>
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" name="push_aktiv" ${cfg.push_aktiv ? 'checked' : ''}>
@@ -63,7 +63,7 @@ const einstellungenModule = (() => {
           </div>
 
           <div class="card">
-            <h2 class="card__title">🎭 Darstellung</h2>
+            <h2 class="card__title">\uD83C\uDFA5 Darstellung</h2>
             <div class="form-group">
               <label>Dark Mode</label>
               <select name="dark_mode" class="input">
@@ -75,7 +75,7 @@ const einstellungenModule = (() => {
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn--primary btn--lg">💾 Einstellungen speichern</button>
+            <button type="submit" class="btn btn--primary btn--lg">\uD83D\uDCBE Einstellungen speichern</button>
           </div>
         </form>
       </div>`;
@@ -86,9 +86,7 @@ const einstellungenModule = (() => {
       e.preventDefault();
       const fd   = new FormData(e.target);
       const data = Object.fromEntries(fd.entries());
-      // Checkboxen korrekt mappen
       data.push_aktiv = fd.has('push_aktiv') ? true : false;
-      // Zahlen
       data.push_intervall_min = +data.push_intervall_min;
       try {
         await api.einstellungen.update(data);

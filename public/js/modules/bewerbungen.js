@@ -2,10 +2,10 @@
 
 const bewerbungenModule = (() => {
   const STATUS_LABELS = {
-    beworben:  '📨 Beworben',
-    interview: '🎤 Interview',
-    angebot:   '🎉 Angebot',
-    abgelehnt: '❌ Abgelehnt',
+    beworben:  '\uD83D\uDCE8 Beworben',
+    interview: '\uD83C\uDFA4 Interview',
+    angebot:   '\uD83C\uDF89 Angebot',
+    abgelehnt: '\u274C Abgelehnt',
   };
 
   let _filter = { status: '', firma: '', archiviert: 0 };
@@ -18,7 +18,7 @@ const bewerbungenModule = (() => {
   }
 
   function _renderShell() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('bewerbungen').innerHTML = `
       <div class="bewerbungen-page">
         <div class="page-header">
           <h1 class="page-title">Bewerbungen</h1>
@@ -121,16 +121,16 @@ const bewerbungenModule = (() => {
         <div class="bew-card__main">
           <strong class="bew-card__firma">${ui.escHtml(b.firma)}</strong>
           <span  class="bew-card__titel">${ui.escHtml(b.titel)}</span>
-          ${b.ort ? `<span class="bew-card__ort">📍 ${ui.escHtml(b.ort)}</span>` : ''}
+          ${b.ort ? `<span class="bew-card__ort">\uD83D\uDCCD ${ui.escHtml(b.ort)}</span>` : ''}
         </div>
         <div class="bew-card__meta">
           <span class="badge badge--${b.status}">${STATUS_LABELS[b.status] || b.status}</span>
-          ${b.followup_datum ? `<span class="bew-card__followup">⏰ ${ui.formatDate(b.followup_datum)}</span>` : ''}
+          ${b.followup_datum ? `<span class="bew-card__followup">\u23F0 ${ui.formatDate(b.followup_datum)}</span>` : ''}
         </div>
         <div class="bew-card__actions">
-          <button class="btn btn--sm" data-action="edit"   data-id="${b.id}">✏️</button>
-          <button class="btn btn--sm" data-action="detail" data-id="${b.id}">👁</button>
-          <button class="btn btn--sm btn--danger" data-action="delete" data-id="${b.id}">🗑</button>
+          <button class="btn btn--sm" data-action="edit"   data-id="${b.id}">\u270F\uFE0F</button>
+          <button class="btn btn--sm" data-action="detail" data-id="${b.id}">\uD83D\uDC41</button>
+          <button class="btn btn--sm btn--danger" data-action="delete" data-id="${b.id}">\uD83D\uDDD1</button>
         </div>
       </div>`).join('');
   }
@@ -144,7 +144,7 @@ const bewerbungenModule = (() => {
         <p><strong>Ort:</strong> ${ui.escHtml(b.ort || '–')}</p>
         <p><strong>Beworben am:</strong> ${ui.formatDate(b.beworben_am)}</p>
         <p><strong>Follow-up:</strong> ${ui.formatDate(b.followup_datum)}</p>
-        ${b.url ? `<p><a href="${ui.escHtml(b.url)}" target="_blank" rel="noopener">🔗 Stellenanzeige</a></p>` : ''}
+        ${b.url ? `<p><a href="${ui.escHtml(b.url)}" target="_blank" rel="noopener">\uD83D\uDD17 Stellenanzeige</a></p>` : ''}
         ${b.anschreiben ? `<details><summary>Anschreiben</summary><pre class="anschreiben-pre">${ui.escHtml(b.anschreiben)}</pre></details>` : ''}
         ${b.notizen ? `<p><strong>Notizen:</strong> ${ui.escHtml(b.notizen)}</p>` : ''}
         <hr>
@@ -178,7 +178,6 @@ const bewerbungenModule = (() => {
   }
 
   function _bindEvents() {
-    // Filter
     document.getElementById('filter-firma')?.addEventListener('input', ui.debounce(e => {
       _filter.firma = e.target.value; _load();
     }));
@@ -188,29 +187,20 @@ const bewerbungenModule = (() => {
     document.getElementById('filter-archiviert')?.addEventListener('change', e => {
       _filter.archiviert = e.target.checked ? 1 : 0; _load();
     });
-
-    // Neue Bewerbung
     document.getElementById('btn-neue-bew')?.addEventListener('click', () => _openForm());
-
-    // Delegiertes Event auf der Liste
     document.getElementById('bew-list')?.addEventListener('click', async e => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const { action, id } = btn.dataset;
       const numId = +id;
       if (action === 'detail') { await _showDetail(numId); }
-      if (action === 'edit')   {
-        const bew = await api.bewerbungen.get(numId);
-        _openForm(bew);
-      }
+      if (action === 'edit')   { const bew = await api.bewerbungen.get(numId); _openForm(bew); }
       if (action === 'delete') {
         if (!await ui.confirm('Bewerbung wirklich löschen?')) return;
         try { await api.bewerbungen.remove(numId); ui.success('Gelöscht'); _load(); }
         catch (err) { ui.error(err.message); }
       }
     });
-
-    // Kommentare (delegiert auf Modal)
     document.getElementById('modal-bew-body')?.addEventListener('click', async e => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -218,32 +208,24 @@ const bewerbungenModule = (() => {
       if (action === 'add-kommentar') {
         const input = document.getElementById(`kommentar-input-${bid}`);
         if (!input?.value.trim()) return;
-        try {
-          await api.bewerbungen.addKommentar(+bid, input.value.trim());
-          input.value = '';
-          await _showDetail(+bid);
-        } catch (err) { ui.error(err.message); }
+        try { await api.bewerbungen.addKommentar(+bid, input.value.trim()); input.value = ''; await _showDetail(+bid); }
+        catch (err) { ui.error(err.message); }
       }
       if (action === 'del-kommentar') {
         try { await api.bewerbungen.deleteKommentar(+bid, +kid); await _showDetail(+bid); }
         catch (err) { ui.error(err.message); }
       }
     });
-
-    // Modal-Close-Buttons
     document.addEventListener('click', e => {
       const closeId = e.target.dataset.closeModal;
       if (closeId) ui.closeModal(closeId);
     });
-
-    // Formular absenden
     document.getElementById('bew-form')?.addEventListener('submit', async e => {
       e.preventDefault();
       const fd   = new FormData(e.target);
       const data = Object.fromEntries(fd.entries());
       const id   = data.id ? +data.id : null;
       delete data.id;
-      // Leere Felder als null
       Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null; });
       try {
         if (id) { await api.bewerbungen.update(id, data); ui.success('Gespeichert'); }

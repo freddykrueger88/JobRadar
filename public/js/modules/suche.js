@@ -7,8 +7,8 @@ const sucheModule = (() => {
     arbeitsagentur: 'Arbeitsagentur',
     themuse:        'The Muse',
     remotive:       'Remotive',
-    adzuna:         'Adzuna 🔑',
-    jooble:         'Jooble 🔑',
+    adzuna:         'Adzuna \uD83D\uDD11',
+    jooble:         'Jooble \uD83D\uDD11',
   };
 
   async function init() {
@@ -17,7 +17,7 @@ const sucheModule = (() => {
   }
 
   function _renderShell() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('suche').innerHTML = `
       <div class="suche-page">
         <h1 class="page-title">Stellensuche</h1>
         <form id="suche-form" class="suche-form card">
@@ -42,7 +42,7 @@ const sucheModule = (() => {
                 ${label}
               </label>`).join('')}
           </div>
-          <button type="submit" class="btn btn--primary" id="btn-suchen">🔍 Suchen</button>
+          <button type="submit" class="btn btn--primary" id="btn-suchen">\uD83D\uDD0D Suchen</button>
         </form>
         <div id="suche-ergebnisse" class="suche-ergebnisse"></div>
       </div>`;
@@ -58,7 +58,6 @@ const sucheModule = (() => {
       const quellen = fd.getAll('quellen').join(',');
       await _suchen({ q, ort, umkreis, quellen });
     });
-
     document.getElementById('suche-ergebnisse')?.addEventListener('click', async e => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -70,20 +69,18 @@ const sucheModule = (() => {
         const url   = card.dataset.url;
         try {
           await api.bewerbungen.create({ titel, firma, url: url || null, quelle: card.dataset.quelle, status: 'beworben', beworben_am: new Date().toISOString().slice(0,10) });
-          btn.textContent = '✅ Beworben';
+          btn.textContent = '\u2705 Beworben';
           btn.disabled = true;
           ui.success(`Bewerbung für ${firma} gespeichert!`);
         } catch (err) { ui.error(err.message); }
       }
-      if (action === 'ausblenden') {
-        btn.closest('.job-card').remove();
-      }
+      if (action === 'ausblenden') { btn.closest('.job-card').remove(); }
     });
   }
 
   async function _suchen(params) {
     const el = document.getElementById('suche-ergebnisse');
-    el.innerHTML = '<p class="loading">⏳ Suche läuft…</p>';
+    el.innerHTML = '<p class="loading">\u23F3 Suche läuft…</p>';
     state.update('suche', { loading: true });
     try {
       const jobs = await api.suche.suchen(params);
@@ -105,15 +102,15 @@ const sucheModule = (() => {
              data-url="${ui.escHtml(j.url || '')}" data-quelle="${ui.escHtml(j.quelle)}">
           <div class="job-card__main">
             <strong>${ui.escHtml(j.titel)}</strong>
-            <span>${ui.escHtml(j.firma || '')} ${j.ort ? '• ' + ui.escHtml(j.ort) : ''}</span>
-            ${j.match_score > 0 ? `<span class="badge badge--match">⭐ ${j.match_score} Match</span>` : ''}
-            ${j.blacklisted       ? '<span class="badge badge--warn">⛔ Blacklist</span>' : ''}
-            ${j.bereits_beworben  ? '<span class="badge badge--applied">✅ Bereits beworben</span>' : ''}
+            <span>${ui.escHtml(j.firma || '')} ${j.ort ? '\u2022 ' + ui.escHtml(j.ort) : ''}</span>
+            ${j.match_score > 0 ? `<span class="badge badge--match">\u2B50 ${j.match_score} Match</span>` : ''}
+            ${j.blacklisted       ? '<span class="badge badge--warn">\u26D4 Blacklist</span>' : ''}
+            ${j.bereits_beworben  ? '<span class="badge badge--applied">\u2705 Bereits beworben</span>' : ''}
           </div>
           <div class="job-card__actions">
-            ${j.url ? `<a href="${ui.escHtml(j.url)}" target="_blank" rel="noopener" class="btn btn--sm">🔗 Anzeige</a>` : ''}
-            <button class="btn btn--sm btn--primary" data-action="bewerben" ${j.bereits_beworben ? 'disabled' : ''}>📨 Bewerben</button>
-            <button class="btn btn--sm" data-action="ausblenden">👁 Ausblenden</button>
+            ${j.url ? `<a href="${ui.escHtml(j.url)}" target="_blank" rel="noopener" class="btn btn--sm">\uD83D\uDD17 Anzeige</a>` : ''}
+            <button class="btn btn--sm btn--primary" data-action="bewerben" ${j.bereits_beworben ? 'disabled' : ''}>\uD83D\uDCE8 Bewerben</button>
+            <button class="btn btn--sm" data-action="ausblenden">\uD83D\uDC41 Ausblenden</button>
           </div>
         </div>`).join('');
   }

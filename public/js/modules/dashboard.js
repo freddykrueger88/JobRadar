@@ -9,7 +9,7 @@ const dashboard = (() => {
   }
 
   function _render() {
-    const main = document.getElementById('main-content');
+    const main = document.getElementById('dashboard');
     main.innerHTML = `
       <div class="dashboard">
         <h1 class="page-title">Dashboard</h1>
@@ -46,19 +46,13 @@ const dashboard = (() => {
   }
 
   function _renderKpi(stats) {
-    const statusMap = {
-      beworben:  { label: 'Beworben',  icon: '📨' },
-      interview: { label: 'Interview', icon: '🎤' },
-      angebot:   { label: 'Angebot',   icon: '🎉' },
-      abgelehnt: { label: 'Abgelehnt', icon: '❌' },
-    };
     const byStatus = Object.fromEntries((stats.byStatus || []).map(r => [r.status, r.n]));
     const kpis = [
-      { label: 'Gesamt',    value: stats.total || 0,              icon: '📋' },
-      { label: 'Überfällig',value: stats.overdue?.length || 0,   icon: '🔴' },
-      { label: 'Interview', value: byStatus.interview || 0,      icon: '🎤' },
-      { label: 'Angebot',   value: byStatus.angebot   || 0,      icon: '🎉' },
-      { label: 'Abgelehnt', value: byStatus.abgelehnt || 0,      icon: '❌' },
+      { label: 'Gesamt',     value: stats.total || 0,             icon: '\uD83D\uDCCB' },
+      { label: 'Überfällig',  value: stats.overdue?.length || 0,  icon: '\uD83D\uDD34' },
+      { label: 'Interview',  value: byStatus.interview || 0,     icon: '\uD83C\uDFA4' },
+      { label: 'Angebot',    value: byStatus.angebot   || 0,     icon: '\uD83C\uDF89' },
+      { label: 'Abgelehnt',  value: byStatus.abgelehnt || 0,     icon: '\u274C' },
     ];
     document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
       <div class="kpi-card">
@@ -70,7 +64,7 @@ const dashboard = (() => {
 
   function _renderFollowups(list) {
     const el = document.getElementById('followup-list');
-    if (!list.length) { el.innerHTML = '<li class="empty">Keine fälligen Follow-ups 🎉</li>'; return; }
+    if (!list.length) { el.innerHTML = '<li class="empty">Keine fälligen Follow-ups \uD83C\uDF89</li>'; return; }
     el.innerHTML = list.map(b => `
       <li class="followup-item">
         <span class="followup-item__date">${ui.formatDate(b.followup_datum)}</span>
