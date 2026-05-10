@@ -28,6 +28,9 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
+      - name: Linting
+        run: npm run lint
+
       - name: Syntax-Check (alle JS-Dateien in src/)
         run: |
           find src -name '*.js' | sort | while read f; do
