@@ -13,7 +13,6 @@
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
   <script>
-    // Dark Mode sofort setzen – verhindert weißen Flash
     (function(){
       var m = localStorage.getItem('jr_mode') || 'dark';
       if (m === 'dark')   document.documentElement.setAttribute('data-theme', 'dark');
@@ -89,22 +88,10 @@
     </div>
   </div>
 
-  <!-- Dashboard -->
-  <div class="tabpanel active" id="dashboard" role="tabpanel">
-    <div class="stat-grid">
-      <div class="stat"><div class="num" id="statGesamt">–</div><div class="lbl">Gesamt</div></div>
-      <div class="stat"><div class="num" id="statFaellig">–</div><div class="lbl">Überfällig</div></div>
-      <div class="stat"><div class="num" id="statInterview">–</div><div class="lbl">Interview</div></div>
-      <div class="stat"><div class="num" id="statAngenommen">–</div><div class="lbl">Angenommen</div></div>
-      <div class="stat"><div class="num" id="statAbgelehnt">–</div><div class="lbl">Abgelehnt</div></div>
-      <div class="stat"><div class="num" id="statDokumente">–</div><div class="lbl">📎 Dokumente</div></div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card"><h3>🎯 Status-Verteilung</h3><canvas id="chartStatus" width="300" height="220"></canvas><div class="chart-legend" id="chartStatusLegend"></div></div>
-      <div class="chart-card"><h3>📅 Bewerbungen pro Monat</h3><canvas id="chartVerlauf" width="300" height="220"></canvas></div>
-    </div>
-    <div class="card"><h2>Status-Log</h2><div class="log" id="log"></div></div>
-  </div>
+  <!-- SPA-Haupt-Container (neue Module rendern hier) -->
+  <div id="main-content"></div>
+
+  <!-- Legacy-Panels (werden von _legacyInit() ein-/ausgeblendet) -->
 
   <!-- Kanban -->
   <div class="tabpanel" id="kanban" role="tabpanel">
