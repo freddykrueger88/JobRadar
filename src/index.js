@@ -34,8 +34,16 @@ app.use('/api/ki/', rateLimit({
   message: { error: 'KI-Limit erreicht – bitte 5 Minuten warten.' }
 }));
 
-// ── Statische Dateien
-app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1d', etag: true }));
+// ── HTML nie cachen (damit Updates nach git pull + restart sofort wirken)
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
+
+// ── Statische Dateien (CSS/JS/Assets: 1h Cache mit ETag)
+app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h', etag: true }));
 
 // ── Health
 app.get('/health', (req, res) => {
@@ -62,6 +70,7 @@ app.use('/api/vorlagen',      require('./routes/vorlagen'));
 // ── SPA-Fallback (vor den Error-Handlern, nach allen API-Routen)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  res.setHeader('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
