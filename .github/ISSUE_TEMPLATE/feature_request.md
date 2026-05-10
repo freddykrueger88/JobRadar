@@ -1,19 +1,15 @@
 ---
-name: ✨ Feature Request
-about: Neue Funktion vorschlagen
-title: '[FEATURE] '
+name: Feature Request
+about: Neues Feature vorschlagen
 labels: enhancement
-assignees: ''
 ---
 
-## Ist dein Feature-Wunsch mit einem Problem verbunden?
-Klare Beschreibung des Problems. z. B. "Es nervt mich, dass ich immer..."
+## Ziel
 
-## Gewünschte Lösung
-Klare Beschreibung was du dir wünschst.
+<!-- Was soll erreicht werden? -->
+
+## Lösungsvorschlag
 
 ## Alternativen
-Hast du andere Lösungsansätze in Betracht gezogen?
 
-## Zusätzlicher Kontext
-Screenshots, Skizzen oder weitere Infos hier einfügen.
+## Betroffene Dateien / Bereiche
