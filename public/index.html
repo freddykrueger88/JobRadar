@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <link rel="stylesheet" href="/css/kanban.css"/>
   <link rel="stylesheet" href="/css/bottom-nav.css"/>
+  <link rel="stylesheet" href="/css/settings.css"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
@@ -15,8 +16,8 @@
     // Dark Mode sofort setzen – verhindert weißen Flash
     (function(){
       var m = localStorage.getItem('jr_mode') || 'dark';
-      document.documentElement.setAttribute('data-theme', m === 'light' ? '' : m);
-      if (m === 'light') document.documentElement.removeAttribute('data-theme');
+      if (m === 'dark')   document.documentElement.setAttribute('data-theme', 'dark');
+      if (m === 'server') document.documentElement.setAttribute('data-theme', 'server');
     })();
   </script>
 </head>
