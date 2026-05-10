@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, v2-overhaul ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main ]
 
@@ -28,38 +28,12 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
-      - name: Syntax-Check (Core)
+      - name: Syntax-Check (alle JS-Dateien in src/)
         run: |
-          node --check src/index.js
-          node --check src/db/database.js
-          node --check src/db/adapter.js
-          node --check src/db/migrate.js
-          node --check src/middleware/errorHandler.js
-          node --check src/middleware/validate.js
-
-      - name: Syntax-Check (Routes)
-        run: |
-          node --check src/routes/bewerbungen.js
-          node --check src/routes/einstellungen.js
-          node --check src/routes/erfahrungen.js
-          node --check src/routes/import.js
-          node --check src/routes/ki.js
-          node --check src/routes/profil.js
-          node --check src/routes/push.js
-          node --check src/routes/suche.js
-          node --check src/routes/vault.js
-
-      - name: Syntax-Check (Services)
-        run: |
-          node --check src/services/bewerbungen.service.js
-          node --check src/services/einstellungen.service.js
-          node --check src/services/erfahrungen.service.js
-          node --check src/services/import.service.js
-          node --check src/services/ki.service.js
-          node --check src/services/profil.service.js
-          node --check src/services/push.service.js
-          node --check src/services/suche.service.js
-          node --check src/services/vault.service.js
+          find src -name '*.js' | sort | while read f; do
+            echo "Checking $f ..."
+            node --check "$f" || exit 1
+          done
 
       - name: Unit-Tests (Services)
         run: npm test
