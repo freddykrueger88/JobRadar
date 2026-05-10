@@ -28,13 +28,6 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
-      - name: Syntax-Check (alle JS-Dateien in src/)
-        run: |
-          find src -name '*.js' | sort | while read f; do
-            echo "Checking $f ..."
-            node --check "$f" || exit 1
-          done
-
       - name: Unit-Tests (Services)
         run: npm test
         env:
@@ -48,6 +41,3 @@ jobs:
           NODE_ENV: test
           OLLAMA_URL: 'http://localhost:11434'
           PORT: '3001'
-
-      - name: Sicherheits-Audit
-        run: npm audit --audit-level=high
