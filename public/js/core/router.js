@@ -3,9 +3,7 @@
 /**
  * Hash-Router
  * Lauscht auf window.hashchange und ruft den passenden Handler auf.
- * Verwendung:
- *   router.register('suche', () => suchModule.init());
- *   router.start('dashboard'); // Standard-Route
+ * Aktualisiert [data-nav] Elemente und blendet .tabpanel Panels ein.
  */
 const router = (() => {
   const routes = new Map();
@@ -17,6 +15,11 @@ const router = (() => {
 
   function navigate(hash, pushState = true) {
     if (pushState) window.location.hash = hash;
+    // Panel-Sichtbarkeit
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(hash) || document.getElementById(_panelAlias(hash));
+    if (panel) panel.classList.add('active');
+    // Handler aufrufen
     const handler = routes.get(hash) || routes.get(defaultRoute);
     if (handler) handler(hash);
     _updateNavActive(hash);
@@ -28,7 +31,6 @@ const router = (() => {
       const hash = window.location.hash.replace('#', '') || fallback;
       navigate(hash, false);
     });
-    // Initiale Route
     const initial = window.location.hash.replace('#', '') || fallback;
     navigate(initial, false);
   }
@@ -41,6 +43,15 @@ const router = (() => {
     document.querySelectorAll('[data-nav]').forEach(el => {
       el.classList.toggle('active', el.dataset.nav === hash);
     });
+  }
+
+  // Routen-Alias: Route-Name → Panel-ID falls abweichend
+  function _panelAlias(hash) {
+    const aliases = {
+      'ki-verlauf': 'anschreiben-verlauf',
+      'ki':         'anschreiben'
+    };
+    return aliases[hash] || hash;
   }
 
   return { register, navigate, start, current };
