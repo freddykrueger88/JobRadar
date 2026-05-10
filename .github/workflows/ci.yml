@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v2-overhaul ]
   pull_request:
     branches: [ main ]
 
@@ -28,29 +28,52 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
-      - name: Syntax-Check (alle Routes)
+      - name: Syntax-Check (Core)
         run: |
           node --check src/index.js
-          node --check src/routes/bewerbungen.js
-          node --check src/routes/dokumente.js
-          node --check src/routes/erfahrungen.js
-          node --check src/routes/ki.js
-          node --check src/routes/profil.js
-          node --check src/routes/suche.js
-          node --check src/routes/vault.js
-          node --check src/routes/vorlagen.js
           node --check src/db/database.js
+          node --check src/db/adapter.js
+          node --check src/db/migrate.js
           node --check src/middleware/errorHandler.js
           node --check src/middleware/validate.js
 
-      - name: Tests ausfuehren
+      - name: Syntax-Check (Routes)
+        run: |
+          node --check src/routes/bewerbungen.js
+          node --check src/routes/einstellungen.js
+          node --check src/routes/erfahrungen.js
+          node --check src/routes/import.js
+          node --check src/routes/ki.js
+          node --check src/routes/profil.js
+          node --check src/routes/push.js
+          node --check src/routes/suche.js
+          node --check src/routes/vault.js
+
+      - name: Syntax-Check (Services)
+        run: |
+          node --check src/services/bewerbungen.service.js
+          node --check src/services/einstellungen.service.js
+          node --check src/services/erfahrungen.service.js
+          node --check src/services/import.service.js
+          node --check src/services/ki.service.js
+          node --check src/services/profil.service.js
+          node --check src/services/push.service.js
+          node --check src/services/suche.service.js
+          node --check src/services/vault.service.js
+
+      - name: Unit-Tests (Services)
         run: npm test
         env:
           DB_PATH: ':memory:'
           NODE_ENV: test
+
+      - name: API-Integrationstests
+        run: npm run test:api
+        env:
+          DB_PATH: ':memory:'
+          NODE_ENV: test
           OLLAMA_URL: 'http://localhost:11434'
-          PORT: '3000'
+          PORT: '3001'
 
       - name: Sicherheits-Audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+        run: npm audit --audit-level=high
