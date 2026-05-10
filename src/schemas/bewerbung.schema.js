@@ -8,7 +8,8 @@ const BewerbungCreateSchema = z.object({
   firma:               z.string().min(1).max(200),
   ort:                 z.string().max(200).optional().nullable(),
   quelle:              z.string().max(100).optional().nullable(),
-  url:                 z.string().url().optional().nullable().or(z.literal('')),
+  url:                 z.string().url().optional().nullable()
+                         .transform(v => (v === '' ? null : v)),
   status:              z.enum(STATUS_WERTE).default('beworben'),
   beworben_am:         z.string().optional().nullable(),
   followup_datum:      z.string().optional().nullable(),

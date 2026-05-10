@@ -2,13 +2,17 @@
 
 const db = require('../db/adapter');
 
+const MAX_LIMIT = 500;
+
 function getAll({ archiviert = 0, status, firma, limit = 100, offset = 0 } = {}) {
+  const cappedLimit  = Math.min(Math.max(1, +limit  || 100), MAX_LIMIT);
+  const safeOffset   = Math.max(0, +offset || 0);
   let sql = 'SELECT * FROM bewerbungen WHERE archiviert = ?';
   const params = [archiviert ? 1 : 0];
   if (status) { sql += ' AND status = ?'; params.push(status); }
   if (firma)  { sql += ' AND firma LIKE ?'; params.push(`%${firma}%`); }
   sql += ' ORDER BY erstellt_am DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
+  params.push(cappedLimit, safeOffset);
   return db.all(sql, params);
 }
 
@@ -38,6 +42,9 @@ function create(data) {
 }
 
 function update(id, data) {
+  // Existenzprüfung vor dem Update
+  if (!getById(id)) return null;
+
   const fields = [
     'titel','firma','ort','quelle','url','status','beworben_am',
     'followup_datum','bewertung','notizen','anschreiben',

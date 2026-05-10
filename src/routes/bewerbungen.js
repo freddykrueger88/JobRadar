@@ -3,6 +3,7 @@
 const router  = require('express').Router();
 const svc     = require('../services/bewerbungen.service');
 const { validate } = require('../middleware/validate');
+const { parseId }  = require('../middleware/parseId');
 const { BewerbungCreateSchema, BewerbungUpdateSchema, KommentarSchema } = require('../schemas/bewerbung.schema');
 
 // Liste
@@ -37,7 +38,9 @@ router.get('/export/csv', (req, res, next) => {
 // Einzelne Bewerbung
 router.get('/:id', (req, res, next) => {
   try {
-    const b = svc.getById(+req.params.id);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Ungültige ID' });
+    const b = svc.getById(id);
     if (!b) return res.status(404).json({ error: 'Nicht gefunden' });
     res.json(b);
   } catch (e) { next(e); }
@@ -52,7 +55,9 @@ router.post('/', validate(BewerbungCreateSchema), (req, res, next) => {
 // Aktualisieren
 router.patch('/:id', validate(BewerbungUpdateSchema), (req, res, next) => {
   try {
-    const b = svc.update(+req.params.id, req.body);
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Ungültige ID' });
+    const b = svc.update(id, req.body);
     if (!b) return res.status(404).json({ error: 'Nicht gefunden' });
     res.json(b);
   } catch (e) { next(e); }
@@ -60,20 +65,34 @@ router.patch('/:id', validate(BewerbungUpdateSchema), (req, res, next) => {
 
 // Löschen
 router.delete('/:id', (req, res, next) => {
-  try { svc.remove(+req.params.id); res.status(204).end(); }
-  catch (e) { next(e); }
+  try {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Ungültige ID' });
+    if (!svc.getById(id)) return res.status(404).json({ error: 'Nicht gefunden' });
+    svc.remove(id);
+    res.status(204).end();
+  } catch (e) { next(e); }
 });
 
 // Kommentar hinzufügen
 router.post('/:id/kommentare', validate(KommentarSchema), (req, res, next) => {
-  try { res.status(201).json(svc.addKommentar(+req.params.id, req.body.text)); }
-  catch (e) { next(e); }
+  try {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Ungültige ID' });
+    if (!svc.getById(id)) return res.status(404).json({ error: 'Bewerbung nicht gefunden' });
+    res.status(201).json(svc.addKommentar(id, req.body.text));
+  } catch (e) { next(e); }
 });
 
 // Kommentar löschen
 router.delete('/:id/kommentare/:kid', (req, res, next) => {
-  try { svc.deleteKommentar(+req.params.kid); res.status(204).end(); }
-  catch (e) { next(e); }
+  try {
+    const id  = parseId(req.params.id);
+    const kid = parseId(req.params.kid);
+    if (!id || !kid) return res.status(400).json({ error: 'Ungültige ID' });
+    svc.deleteKommentar(kid);
+    res.status(204).end();
+  } catch (e) { next(e); }
 });
 
 module.exports = router;
