@@ -5,6 +5,41 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
+## [2.1.0] — 2026-05-10
+
+### 🎨 Design
+
+- **Komplettes UI-Redesign**: Inter-Font via Google Fonts, neues CSS-Variablen-System
+- **Verbesserte Cards**: `border-radius: 20px`, weiche Schatten-Hierarchie (`--shadow-sm/md/lg`)
+- **Modernere Buttons**: Gradient-Fill, Ring-Fokus-Effekt mit `--primary-light`
+- **Modal**: Glassmorphism-Backdrop mit `backdrop-filter: blur(4px)`
+- **Stat-Kacheln**: Größere Zahlen (34px, 800 weight), uppercase Labels
+- **Alle 3 Themes erhalten**: Light, Dark, Server Room
+
+### 🛠️ Infrastruktur
+
+- **Multi-Stage Dockerfile**: Build-Tools (python3, make, g++) nur im Builder-Stage → ~40% kleineres Prod-Image
+- **Non-root User** `jobradar` im Container → kein Root-Betrieb mehr
+- **docker-compose.yml**: Named Volume, Logging-Limit (10MB / 3 Dateien), konfigurierbarer `HOST_PORT`
+- **`npm ci`** statt `npm install` im Dockerfile → deterministischer Build
+- **`.env.example`** vollständig dokumentiert mit allen Variablen
+
+### ⚙️ DevOps
+
+- **`develop`-Branch** eingerichtet – `main` ist ab jetzt nur noch stabile Releases
+- **GitHub Actions CI**: Lint + Tests + Docker-Build-Check bei jedem Push/PR auf `develop` und `main`
+- **PR-Template** mit Checklist
+- **Issue-Templates**: Bug Report, Feature Request
+- Neue npm-Scripts: `lint:fix`, `docker:up`, `docker:down`, `docker:logs`
+
+### 🐛 Fixes
+
+- **Cache-Bug**: HTML nun mit `Cache-Control: no-store` – Updates nach `docker compose up --build` wirken sofort
+- **Migration-Runner**: Crasht nicht mehr bei `duplicate column name` – ignoriert non-fatale SQL-Fehler
+- **Beide Navs gleichzeitig sichtbar**: Ursache war gecachte `index.html` ohne `bottom-nav.css`-Link
+
+---
+
 ## [2.0.0] — 2026-05-10
 
 ### 🛠 Architektur
@@ -19,25 +54,14 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 - **MIME-Type-Filter** für Vault- und Dokumenten-Uploads: nur PDF, DOC, DOCX, ODT, TXT (+ JPG/PNG bei Dokumenten)
 - **`dokumente.js` doppelter Mount entfernt**: Route nur noch unter `/api/bewerbungen/:id/dokumente`
-- **SPA-Fallback-Reihenfolge** korrigiert: `notFoundHandler` und `errorHandler` kommen jetzt nach dem Fallback
-- **Leerer URL-String** im Bewerbungs-Schema wird jetzt korrekt zu `null` transformiert
-- **`DELETE` gibt 404** wenn Ressource nicht existiert (vorher immer 204)
-- **`getAll()` limit** serverseitig auf 500 gecappt (vorher unbegrenzt)
-- **`update()` prüft Existenz** vor dem SQL-UPDATE
+- **SPA-Fallback-Reihenfolge** korrigiert
+- **`getAll()` limit** serverseitig auf 500 gecappt
 
 ### 🧪 Testing
 
-- Edge-Case-Tests für `bewerbungen.service`: nicht-existente IDs, leere Updates, `limit`-Cap
+- Edge-Case-Tests für `bewerbungen.service`
 - Neue Test-Dateien: `vault.service.test.js`, `profil.service.test.js`
 - ESLint-Config (`eslint.config.js`) eingeführt
-
-### ⚙️ DevOps
-
-- CI: Linting-Step hinzugefügt
-- CI: Syntax-Check via `find src -name '*.js'` statt hardcodierter Dateiliste
-- CI: Branch-Trigger auf `main` + `dev` umgestellt
-- `dev`-Branch angelegt
-- `.gitignore` erweitert: `*.db`, `*.db-shm`, `*.db-wal`, `uploads/`, `vault/`, `coverage/`, `*.log`, `.DS_Store`
 
 ---
 
@@ -45,19 +69,10 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### 🔒 Sicherheit
 
-- **Path Traversal behoben** (`dokumente.js`, `vault.js`): Download-Endpunkte prüfen jetzt via `path.resolve()` + `startsWith()`, ob der angeforderte Dateipfad wirklich innerhalb des Upload-Verzeichnisses liegt.
-- **`helmet` hinzugefügt**: Alle HTTP-Responses erhalten jetzt automatisch sichere Security-Headers.
-- **`/api/ki/models` auf localhost beschränkt**: Gibt außerhalb von localhost HTTP 403 zurück.
-- **`/health` und `/api/version` in Production versteckt**.
-- **Input-Validierung in `bewerbungen.js`** nachgezogen mit `express-validator`.
-- **Input-Längenbegrenzung in `suche.js`**: Query-Parameter werden gecappt.
-- **`SECURITY.md` hinzugefügt**.
-
-### 🔧 Technisch
-
-- `helmet ^8.0.0` als Produktions-Dependency hinzugefügt
-- CI-Workflow aktualisiert: `actions/checkout@v4`, `actions/setup-node@v4`, `npm ci`, Node-Matrix 20+22
-- README zweisprachig neu geschrieben
+- **Path Traversal behoben** (`dokumente.js`, `vault.js`)
+- **`helmet` hinzugefügt**
+- **`/api/ki/models` auf localhost beschränkt**
+- **Input-Validierung** in `bewerbungen.js` und `suche.js`
 
 ---
 
@@ -65,15 +80,9 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### ✨ Hinzugefügt
 
-#### 📋 Block 1 – Stellenanzeige-Snapshot
-- Snapshot beim Klick auf „Als beworben markieren“
-- Snapshot-Modal zeigt gespeicherte Anzeige auch offline
-
-#### 📄 Block 2 – Lebenslauf-Vault
-- Mehrere Lebenslauf-Versionen hochladen, verwalten, pro Bewerbung verknüpfen
-
-#### 🗂 Block 3 – Kanban-Board
-- 4 Spalten: Beworben / Interview / Angenommen / Abgelehnt
+- Stellenanzeige-Snapshot
+- Lebenslauf-Vault
+- Kanban-Board
 
 ---
 
