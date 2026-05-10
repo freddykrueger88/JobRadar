@@ -1,6 +1,6 @@
 'use strict';
 
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const { create: createBewerbung } = require('./bewerbungen.service');
 const db = require('../db/adapter');
 
@@ -24,17 +24,56 @@ const STATUS_MAP = {
   'abgelehnt':   'abgelehnt','rejected': 'abgelehnt', 'absage': 'abgelehnt'
 };
 
-function parseFile(buffer, mimetype) {
-  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(sheet, { defval: '' });
+/**
+ * Liest eine .xlsx-Datei aus einem Buffer und gibt Zeilen als Array von Objekten zurück.
+ * CSV wird ebenfalls unterstützt (plaintext-Parsing).
+ */
+async function parseFile(buffer, mimetype) {
+  // CSV-Fallback: plaintext parsen
+  if (mimetype === 'text/csv' || mimetype === 'application/csv') {
+    return _parseCsv(buffer.toString('utf8'));
+  }
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+  const sheet = wb.worksheets[0];
+  if (!sheet) return [];
+
+  const rows = [];
+  let headers = [];
+
+  sheet.eachRow((row, rowNum) => {
+    const values = row.values.slice(1); // ExcelJS ist 1-basiert, Index 0 ist leer
+    if (rowNum === 1) {
+      headers = values.map(v => String(v ?? '').trim());
+      return;
+    }
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = values[i] ?? ''; });
+    rows.push(obj);
+  });
+
+  return rows;
+}
+
+function _parseCsv(text) {
+  const lines = text.replace(/\r/g, '').split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  // Einfaches CSV-Parsing (komma- oder semikolon-getrennt)
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const vals = line.split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    return obj;
+  });
 }
 
 function mapSpalten(rows) {
-  if (!rows.length) return [];
+  if (!rows.length) return { rows, mapping: {} };
   const headers = Object.keys(rows[0]).map(h => h.trim().toLowerCase());
 
-  // Für jedes interne Feld: welche Spalte aus der Datei matcht?
   const mapping = {};
   for (const [feld, kandidaten] of Object.entries(SPALTEN_MAP)) {
     const match = headers.find(h => kandidaten.includes(h));
@@ -45,7 +84,7 @@ function mapSpalten(rows) {
 }
 
 async function importieren(buffer, mimetype) {
-  const rows = parseFile(buffer, mimetype);
+  const rows = await parseFile(buffer, mimetype);
   const { mapping } = mapSpalten(rows);
 
   let importiert = 0, uebersprungen = 0;
@@ -57,7 +96,7 @@ async function importieren(buffer, mimetype) {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const get = feld => (mapping[feld] ? String(row[mapping[feld]] || '').trim() : '');
+    const get = feld => (mapping[feld] ? String(row[mapping[feld]] ?? '').trim() : '');
 
     const titel = get('titel');
     const firma = get('firma');
@@ -68,22 +107,20 @@ async function importieren(buffer, mimetype) {
     }
 
     const key = `${firma}|${titel}`.toLowerCase();
-    if (bereitsVorhanden.has(key)) {
-      uebersprungen++;
-      continue;
-    }
+    if (bereitsVorhanden.has(key)) { uebersprungen++; continue; }
 
     const rawStatus = get('status').toLowerCase();
     const status = STATUS_MAP[rawStatus] || 'beworben';
 
     try {
-      createBewerbung({ titel, firma,
+      createBewerbung({
+        titel, firma,
         ort:         get('ort')         || null,
         quelle:      get('quelle')      || 'import',
         url:         get('url')         || null,
         notizen:     get('notizen')     || null,
         beworben_am: get('beworben_am') || null,
-        status
+        status,
       });
       bereitsVorhanden.add(key);
       importiert++;
@@ -95,4 +132,15 @@ async function importieren(buffer, mimetype) {
   return { importiert, uebersprungen, fehler };
 }
 
-module.exports = { importieren, mapSpalten, parseFile };
+// Vorschau: erste 10 Zeilen + erkanntes Mapping (kein DB-Zugriff)
+async function vorschau(buffer, mimetype) {
+  const rows = await parseFile(buffer, mimetype);
+  const { mapping } = mapSpalten(rows);
+  return {
+    vorschau: rows.slice(0, 10),
+    mapping,
+    gesamt: rows.length,
+  };
+}
+
+module.exports = { importieren, vorschau, mapSpalten, parseFile };
