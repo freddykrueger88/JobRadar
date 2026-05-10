@@ -221,9 +221,23 @@ git push origin feature/mein-feature
 # Pull Request öffnen
 ```
 
-## 📜 Lizenz
+## 📜 Lizenz & Nutzung
 
-MIT — frei verwendbar, anpassbar und erweiterbar.
+MIT — also ja, mach damit was du willst. Wirklich.
+
+Fork es. Verkauf es. Bau eine millionenschwere SaaS draus. Nenn es um, gib dir selbst einen Gründer-Hoodie und tu so als wäre es deine Idee gewesen — kein Problem, null Stress.
+
+Du musst mich nicht nennen. Aber falls du es tust, irgendwo in einem kleinen Changelog-Eintrag oder einem versteckten About-Screen, freue ich mich natürlich trotzdem. Bin halt auch nur ein Mensch.
+
+> **⚠️ Die eine Bedingung — und die ist ernst gemeint:**
+>
+> Sollte aus diesem Projekt jemals ein kommerzielles Produkt mit bezahltem Zugang entstehen — egal ob von dir, deinem Cousin, einem VC-finanzierten Startup das den Code gefunden hat, oder irgendjemand anderem — erhält **[freddykrueger88](https://github.com/freddykrueger88)** lebenslang, unwiderruflich und kostenlos Zugang zum besten verfügbaren Abo-Tier.
+>
+> Nicht das mittlere. Nicht das günstigste mit „JobRadar-Freund“-Badge. Das **beste**.
+>
+> Ja, das ist die einzige Bedingung. Nein, ich werde es wahrscheinlich nie einfordern müssen. Aber falls doch: du weißt es, ich weiß es, GitHub weiß es. Das Internet vergisst nicht. 🤝
+
+*Idee & Original: [freddykrueger88](https://github.com/freddykrueger88) — gebaut mit KI, Koffein und der Hoffnung dass es irgendwann jemand anderem nützt.*
 
 ---
 
@@ -427,6 +441,20 @@ git push origin feature/my-feature
 # Open a Pull Request
 ```
 
-## 📜 License
+## 📜 License & Usage
 
-MIT — free to use, adapt and extend.
+MIT — so yes, do whatever you want with this. Seriously.
+
+Fork it. Sell it. Build a million-dollar SaaS out of it. Rebrand it, give yourself a founder hoodie and pretend it was your idea all along — no problem, zero stress.
+
+You don't have to credit me. But if you do, somewhere in a tiny changelog entry or a hidden about screen, I won't complain. I'm only human.
+
+> **⚠️ The one condition — and this is dead serious:**
+>
+> If this project ever becomes a commercial product with paid access — whether by you, your cousin, a VC-funded startup that stumbled across the code, or literally anyone else — **[freddykrueger88](https://github.com/freddykrueger88)** gets lifetime, irrevocable, completely free access to the best available subscription tier.
+>
+> Not the middle one. Not the cheapest with a cute "Friend of JobRadar" badge. The **best one**.
+>
+> Yes, that's the only condition. No, I'll probably never need to enforce it. But if I do: you know it, I know it, GitHub knows it. The internet doesn't forget. 🤝
+
+*Original idea & concept: [freddykrueger88](https://github.com/freddykrueger88) — built with AI, caffeine, and the quiet hope that someone out there finds it useful.*
