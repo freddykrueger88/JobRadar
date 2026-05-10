@@ -7,6 +7,7 @@
   <title>JobRadar</title>
   <link rel="stylesheet" href="/css/style.css"/>
   <link rel="stylesheet" href="/css/kanban.css"/>
+  <link rel="stylesheet" href="/css/bottom-nav.css"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
@@ -28,22 +29,78 @@
   </div>
   <div id="loadingBar" class="loading-bar"></div>
 
-  <!-- Navigation -->
+  <!-- Desktop-Navigation -->
   <nav class="tabs" role="tablist" aria-label="Hauptnavigation">
-    <!-- Hauptfunktionen -->
     <button class="tab active" data-nav="dashboard" role="tab" aria-selected="true" onclick="router.navigate('dashboard')">📊 Dashboard</button>
     <button class="tab" data-nav="suche" role="tab" aria-selected="false" onclick="router.navigate('suche')">🔍 Stellensuche</button>
     <button class="tab" data-nav="bewerbungen" role="tab" aria-selected="false" onclick="router.navigate('bewerbungen')">📋 Bewerbungen</button>
     <button class="tab" data-nav="kanban" role="tab" aria-selected="false" onclick="router.navigate('kanban')">🗂 Kanban</button>
-    <!-- KI & Dokumente -->
     <button class="tab" data-nav="ki" role="tab" aria-selected="false" onclick="router.navigate('ki')">✨ Anschreiben</button>
     <button class="tab" data-nav="ki-verlauf" role="tab" aria-selected="false" onclick="router.navigate('ki-verlauf')">📝 KI-Verlauf</button>
     <button class="tab" data-nav="vorlagen" role="tab" aria-selected="false" onclick="router.navigate('vorlagen')">🎨 KI-Stile</button>
     <button class="tab" data-nav="vault" role="tab" aria-selected="false" onclick="router.navigate('vault')">📄 CV-Vault</button>
-    <!-- Profil -->
     <button class="tab" data-nav="erfahrungen" role="tab" aria-selected="false" onclick="router.navigate('erfahrungen')">🛠 Erfahrungen</button>
     <button class="tab" data-nav="profil" role="tab" aria-selected="false" onclick="router.navigate('profil')">👤 Profil</button>
   </nav>
+
+  <!-- Mobile Bottom-Navigation -->
+  <nav class="bottom-nav" aria-label="Mobile Navigation">
+    <button class="bottom-nav-item active" data-nav="dashboard" onclick="router.navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="suche" onclick="router.navigate('suche')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Suche</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="bewerbungen" onclick="router.navigate('bewerbungen')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Bewerbungen</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="ki" onclick="router.navigate('ki')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+      <span>Anschreiben</span>
+    </button>
+    <button class="bottom-nav-item" id="moreBtn" onclick="toggleDrawer()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      <span>Mehr</span>
+    </button>
+  </nav>
+
+  <!-- Mehr-Drawer (Mobile) -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+  <div class="bottom-nav-drawer" id="bottomNavDrawer">
+    <div class="drawer-grid">
+      <button class="drawer-item" data-nav="kanban" onclick="closeDrawer(); router.navigate('kanban')">
+        <span class="drawer-item-icon">🗂</span>
+        <span>Kanban</span>
+      </button>
+      <button class="drawer-item" data-nav="ki-verlauf" onclick="closeDrawer(); router.navigate('ki-verlauf')">
+        <span class="drawer-item-icon">📝</span>
+        <span>KI-Verlauf</span>
+      </button>
+      <button class="drawer-item" data-nav="vorlagen" onclick="closeDrawer(); router.navigate('vorlagen')">
+        <span class="drawer-item-icon">🎨</span>
+        <span>KI-Stile</span>
+      </button>
+      <button class="drawer-item" data-nav="vault" onclick="closeDrawer(); router.navigate('vault')">
+        <span class="drawer-item-icon">📄</span>
+        <span>CV-Vault</span>
+      </button>
+      <button class="drawer-item" data-nav="erfahrungen" onclick="closeDrawer(); router.navigate('erfahrungen')">
+        <span class="drawer-item-icon">🛠</span>
+        <span>Erfahrungen</span>
+      </button>
+      <button class="drawer-item" data-nav="profil" onclick="closeDrawer(); router.navigate('profil')">
+        <span class="drawer-item-icon">👤</span>
+        <span>Profil</span>
+      </button>
+      <button class="drawer-item" data-nav="einstellungen" onclick="closeDrawer(); router.navigate('einstellungen')">
+        <span class="drawer-item-icon">⚙️</span>
+        <span>Einstellungen</span>
+      </button>
+    </div>
+  </div>
 
   <!-- Dashboard -->
   <div class="tabpanel active" id="dashboard" role="tabpanel">
@@ -56,28 +113,16 @@
       <div class="stat"><div class="num" id="statDokumente">–</div><div class="lbl">📎 Dokumente</div></div>
     </div>
     <div class="chart-grid">
-      <div class="chart-card">
-        <h3>🎯 Status-Verteilung</h3>
-        <canvas id="chartStatus" width="300" height="220"></canvas>
-        <div class="chart-legend" id="chartStatusLegend"></div>
-      </div>
-      <div class="chart-card">
-        <h3>📅 Bewerbungen pro Monat</h3>
-        <canvas id="chartVerlauf" width="300" height="220"></canvas>
-      </div>
+      <div class="chart-card"><h3>🎯 Status-Verteilung</h3><canvas id="chartStatus" width="300" height="220"></canvas><div class="chart-legend" id="chartStatusLegend"></div></div>
+      <div class="chart-card"><h3>📅 Bewerbungen pro Monat</h3><canvas id="chartVerlauf" width="300" height="220"></canvas></div>
     </div>
     <div class="card"><h2>Status-Log</h2><div class="log" id="log"></div></div>
   </div>
 
   <!-- Kanban -->
   <div class="tabpanel" id="kanban" role="tabpanel">
-    <div class="card" style="margin-bottom:16px">
-      <h2>🗂 Kanban-Board</h2>
-      <p class="muted" style="font-size:14px">Verschiebe Bewerbungen mit den Pfeilen ← → zwischen den Spalten.</p>
-    </div>
-    <div class="kanban-board" id="kanbanBoard">
-      <p class="muted" style="padding:24px">Klicke auf den Tab um das Board zu laden.</p>
-    </div>
+    <div class="card" style="margin-bottom:16px"><h2>🗂 Kanban-Board</h2><p class="muted" style="font-size:14px">Verschiebe Bewerbungen mit den Pfeilen ← → zwischen den Spalten.</p></div>
+    <div class="kanban-board" id="kanbanBoard"><p class="muted" style="padding:24px">Klicke auf den Tab um das Board zu laden.</p></div>
   </div>
 
   <!-- Stellensuche -->
@@ -104,12 +149,8 @@
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <div>
-          <label>📍 Ort / PLZ</label>
-          <input id="sucheOrt" placeholder="z. B. Berlin, Hamburg, 10115…">
-        </div>
-        <div>
-          <label>🔄 Umkreis</label>
+        <div><label>📍 Ort / PLZ</label><input id="sucheOrt" placeholder="z. B. Berlin, Hamburg, 10115…"></div>
+        <div><label>🔄 Umkreis</label>
           <select id="sucheUmkreis">
             <option value="0">Kein Umkreis</option>
             <option value="10">10 km</option>
@@ -132,9 +173,7 @@
     <div id="jobsList"><div class="empty"><div class="empty-icon">🔍</div><h3>Bereit zur Suche</h3><p>Starte eine Suche um passende Stellen zu laden.</p></div></div>
     <details id="hiddenSection" style="margin-top:24px">
       <summary style="cursor:pointer;font-weight:600;font-size:15px;padding:10px 0;user-select:none">🙈 Ausgeblendete Stellen verwalten</summary>
-      <div class="card" style="margin-top:10px">
-        <div id="hiddenList"><p class="muted" style="font-size:14px">Keine ausgeblendeten Stellen.</p></div>
-      </div>
+      <div class="card" style="margin-top:10px"><div id="hiddenList"><p class="muted" style="font-size:14px">Keine ausgeblendeten Stellen.</p></div></div>
     </details>
   </div>
 
@@ -144,20 +183,11 @@
       <h2>Bewerbungsverlauf</h2>
       <div class="row3">
         <div><label>Status</label>
-          <select id="filterStatus">
-            <option value="">Alle</option>
-            <option value="beworben">Beworben</option>
-            <option value="interview">Interview</option>
-            <option value="angenommen">Angenommen</option>
-            <option value="abgelehnt">Abgelehnt</option>
-          </select>
+          <select id="filterStatus"><option value="">Alle</option><option value="beworben">Beworben</option><option value="interview">Interview</option><option value="angenommen">Angenommen</option><option value="abgelehnt">Abgelehnt</option></select>
         </div>
         <div><label>Firma</label><input id="filterFirma" placeholder="z. B. Bosch…"></div>
         <div><label>Ansicht</label>
-          <select id="filterArchiv">
-            <option value="0">Aktive Bewerbungen</option>
-            <option value="1">Archiv</option>
-          </select>
+          <select id="filterArchiv"><option value="0">Aktive Bewerbungen</option><option value="1">Archiv</option></select>
         </div>
       </div>
       <div class="footerbar">
@@ -211,48 +241,24 @@
   <!-- KI-Stile -->
   <div class="tabpanel" id="vorlagen" role="tabpanel">
     <div class="vorlage-layout">
-      <div>
-        <div class="card">
-          <h2>🎨 Gespeicherte KI-Stile</h2>
-          <p class="muted" style="font-size:14px;margin-bottom:16px">Stile steuern Ton, Länge und besondere Hinweise die die KI beim Erstellen des Anschreibens berücksichtigt.</p>
-          <div id="vorlagenList"></div>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <h2>Neuen Stil erstellen</h2>
-          <div class="stack">
-            <div><label>Name</label><input id="vorlageName" placeholder="z. B. IT Support formell"></div>
-            <div class="row">
-              <div><label>Ton</label>
-                <select id="vorlageTon">
-                  <option value="formell">Formell &amp; professionell</option>
-                  <option value="modern">Modern &amp; direkt</option>
-                  <option value="kreativ">Kreativ &amp; ausdrucksstark</option>
-                  <option value="kurz">Sehr kurz &amp; prägnant</option>
-                </select>
-              </div>
-              <div><label>Länge</label>
-                <select id="vorlageLaenge">
-                  <option value="kurz">Kurz (~120 Wörter)</option>
-                  <option value="mittel" selected>Mittel (~220 Wörter)</option>
-                  <option value="lang">Lang (~350 Wörter)</option>
-                </select>
-              </div>
-            </div>
-            <div><label>Sprache</label>
-              <select id="vorlageSprache">
-                <option value="deutsch">Deutsch</option>
-                <option value="englisch">Englisch</option>
-              </select>
-            </div>
-            <div><label>Besondere Hinweise für die KI</label>
-              <textarea id="vorlageHinweise" rows="4" placeholder="z. B. Betone Linux-Erfahrung und Open-Source-Begeisterung. Keine Floskeln."></textarea>
-            </div>
-            <button class="btn primary" onclick="saveVorlage()">Stil speichern</button>
+      <div><div class="card">
+        <h2>🎨 Gespeicherte KI-Stile</h2>
+        <p class="muted" style="font-size:14px;margin-bottom:16px">Stile steuern Ton, Länge und besondere Hinweise die die KI beim Erstellen des Anschreibens berücksichtigt.</p>
+        <div id="vorlagenList"></div>
+      </div></div>
+      <div><div class="card">
+        <h2>Neuen Stil erstellen</h2>
+        <div class="stack">
+          <div><label>Name</label><input id="vorlageName" placeholder="z. B. IT Support formell"></div>
+          <div class="row">
+            <div><label>Ton</label><select id="vorlageTon"><option value="formell">Formell &amp; professionell</option><option value="modern">Modern &amp; direkt</option><option value="kreativ">Kreativ &amp; ausdrucksstark</option><option value="kurz">Sehr kurz &amp; prägnant</option></select></div>
+            <div><label>Länge</label><select id="vorlageLaenge"><option value="kurz">Kurz (~120 Wörter)</option><option value="mittel" selected>Mittel (~220 Wörter)</option><option value="lang">Lang (~350 Wörter)</option></select></div>
           </div>
+          <div><label>Sprache</label><select id="vorlageSprache"><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div>
+          <div><label>Besondere Hinweise für die KI</label><textarea id="vorlageHinweise" rows="4" placeholder="z. B. Betone Linux-Erfahrung und Open-Source-Begeisterung. Keine Floskeln."></textarea></div>
+          <button class="btn primary" onclick="saveVorlage()">Stil speichern</button>
         </div>
-      </div>
+      </div></div>
     </div>
   </div>
 
@@ -264,11 +270,7 @@
         <p class="muted" style="font-size:14px;margin-bottom:16px">Skills fließen in den Match-Score ein und werden der KI beim Anschreiben mitgegeben.</p>
         <div class="skill-add-row">
           <input id="skillName" placeholder="z. B. Linux, Docker, Proxmox…" style="flex:1">
-          <select id="skillLevel">
-            <option value="Anfänger">Anfänger</option>
-            <option value="Fortgeschritten" selected>Fortgeschritten</option>
-            <option value="Experte">Experte</option>
-          </select>
+          <select id="skillLevel"><option value="Anfänger">Anfänger</option><option value="Fortgeschritten" selected>Fortgeschritten</option><option value="Experte">Experte</option></select>
           <button class="btn primary" onclick="addSkill()">+ Hinzufügen</button>
         </div>
         <div id="skillsList" style="margin-top:16px"></div>
@@ -277,17 +279,9 @@
         <h2>🏢 Berufsstationen</h2>
         <p class="muted" style="font-size:14px;margin-bottom:16px">Beschreibe deine Tätigkeiten – die KI zieht sich relevante Punkte für das Anschreiben heraus.</p>
         <div class="stack">
-          <div class="row">
-            <div><label>Firma / Arbeitgeber</label><input id="stFirma" placeholder="z. B. Muster GmbH"></div>
-            <div><label>Rolle / Position</label><input id="stRolle" placeholder="z. B. IT-Techniker"></div>
-          </div>
-          <div class="row">
-            <div><label>Von</label><input id="stVon" type="month"></div>
-            <div><label>Bis (leer = aktuell)</label><input id="stBis" type="month"></div>
-          </div>
-          <div><label>Tätigkeiten &amp; Erfolge</label>
-            <textarea id="stTaetigkeiten" rows="4" placeholder="z. B.&#10;• Administration von 50 Linux-Servern&#10;• 2nd-Level-Support für 200 Mitarbeiter"></textarea>
-          </div>
+          <div class="row"><div><label>Firma / Arbeitgeber</label><input id="stFirma" placeholder="z. B. Muster GmbH"></div><div><label>Rolle / Position</label><input id="stRolle" placeholder="z. B. IT-Techniker"></div></div>
+          <div class="row"><div><label>Von</label><input id="stVon" type="month"></div><div><label>Bis (leer = aktuell)</label><input id="stBis" type="month"></div></div>
+          <div><label>Tätigkeiten &amp; Erfolge</label><textarea id="stTaetigkeiten" rows="4" placeholder="z. B.&#10;• Administration von 50 Linux-Servern&#10;• 2nd-Level-Support für 200 Mitarbeiter"></textarea></div>
           <button class="btn primary" onclick="addStation()">+ Station hinzufügen</button>
         </div>
         <div id="stationenList" style="margin-top:20px"></div>
@@ -295,10 +289,7 @@
       <div class="card">
         <h2>🎓 Ausbildung &amp; Zertifikate</h2>
         <div class="stack">
-          <div class="row">
-            <div><label>Titel / Abschluss</label><input id="zertTitel" placeholder="z. B. Fachinformatiker Systemintegration"></div>
-            <div><label>Jahr</label><input id="zertJahr" type="number" placeholder="2020" min="1970" max="2099"></div>
-          </div>
+          <div class="row"><div><label>Titel / Abschluss</label><input id="zertTitel" placeholder="z. B. Fachinformatiker Systemintegration"></div><div><label>Jahr</label><input id="zertJahr" type="number" placeholder="2020" min="1970" max="2099"></div></div>
           <div><label>Institution</label><input id="zertInstitution" placeholder="z. B. BBS Verden, Udemy, IHK…"></div>
           <button class="btn primary" onclick="addZertifikat()">+ Hinzufügen</button>
         </div>
@@ -330,18 +321,9 @@
     <div class="card">
       <h2>Mein Profil</h2>
       <div class="stack">
-        <div class="row">
-          <div><label>Name</label><input id="name"></div>
-          <div><label>E-Mail</label><input id="email" type="email"></div>
-        </div>
-        <div class="row">
-          <div><label>Zielrollen</label><input id="rollen" placeholder="z. B. IT Administrator, IT Support…"></div>
-          <div><label>Ort / Remote</label><input id="ort" placeholder="z. B. Remote, Deutschland…"></div>
-        </div>
-        <div class="row">
-          <div><label>Keywords</label><input id="keywords" placeholder="Linux, Docker, Ansible…"></div>
-          <div><label>Blacklist</label><input id="blacklist" placeholder="SAP, Vertrieb…"></div>
-        </div>
+        <div class="row"><div><label>Name</label><input id="name"></div><div><label>E-Mail</label><input id="email" type="email"></div></div>
+        <div class="row"><div><label>Zielrollen</label><input id="rollen" placeholder="z. B. IT Administrator, IT Support…"></div><div><label>Ort / Remote</label><input id="ort" placeholder="z. B. Remote, Deutschland…"></div></div>
+        <div class="row"><div><label>Keywords</label><input id="keywords" placeholder="Linux, Docker, Ansible…"></div><div><label>Blacklist</label><input id="blacklist" placeholder="SAP, Vertrieb…"></div></div>
         <div><label>Kurzprofil</label><textarea id="kurzprofil" rows="4" placeholder="Dein kurzes berufliches Profil…"></textarea></div>
         <div><label>Stärken / Skills</label><textarea id="staerken" rows="3" placeholder="Linux, Docker, Proxmox, Troubleshooting…"></textarea></div>
         <button class="btn primary" onclick="saveProfil()">Profil speichern</button>
@@ -378,31 +360,9 @@
         <h2>🔍 Standard-Sucheinstellungen</h2>
         <div class="stack">
           <div class="row">
-            <div><label>Standard-Quelle</label>
-              <select id="setDefaultQuelle">
-                <option value="all">Alle Quellen</option>
-                <option value="arbeitnow">Arbeitnow</option>
-                <option value="jobicy">Jobicy (Remote)</option>
-                <option value="arbeitsagentur">Arbeitsagentur</option>
-                <option value="themuse">The Muse</option>
-                <option value="remotive">Remotive (Remote)</option>
-                <option value="adzuna">Adzuna</option>
-                <option value="jooble">Jooble</option>
-              </select>
-            </div>
-            <div><label>Standard-Umkreis</label>
-              <select id="setDefaultRadius">
-                <option value="0">Kein Umkreis</option>
-                <option value="10">10 km</option>
-                <option value="25">25 km</option>
-                <option value="50">50 km</option>
-                <option value="100">100 km</option>
-                <option value="200">200 km</option>
-              </select>
-            </div>
-            <div><label>Max. Treffer</label>
-              <input id="setDefaultCount" type="number" min="1" max="30" value="15">
-            </div>
+            <div><label>Standard-Quelle</label><select id="setDefaultQuelle"><option value="all">Alle Quellen</option><option value="arbeitnow">Arbeitnow</option><option value="jobicy">Jobicy (Remote)</option><option value="arbeitsagentur">Arbeitsagentur</option><option value="themuse">The Muse</option><option value="remotive">Remotive (Remote)</option><option value="adzuna">Adzuna</option><option value="jooble">Jooble</option></select></div>
+            <div><label>Standard-Umkreis</label><select id="setDefaultRadius"><option value="0">Kein Umkreis</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option></select></div>
+            <div><label>Max. Treffer</label><input id="setDefaultCount" type="number" min="1" max="30" value="15"></div>
           </div>
           <button class="btn primary" onclick="saveSettingsBlock('suche')">Speichern</button>
         </div>
@@ -412,13 +372,7 @@
         <div class="stack">
           <div class="row">
             <div><label>Standard-Modell</label><input id="setDefaultKiModel" placeholder="z. B. mistral"></div>
-            <div><label>Standard-Sprache</label>
-              <select id="setDefaultKiSprache">
-                <option value="">Nicht festlegen</option>
-                <option value="deutsch">Deutsch</option>
-                <option value="englisch">Englisch</option>
-              </select>
-            </div>
+            <div><label>Standard-Sprache</label><select id="setDefaultKiSprache"><option value="">Nicht festlegen</option><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div>
           </div>
           <button class="btn primary" onclick="saveSettingsBlock('ki')">Speichern</button>
         </div>
@@ -427,15 +381,8 @@
         <h2>📋 Bewerbungen</h2>
         <div class="stack">
           <div class="row">
-            <div>
-              <label>Auto-Archivierung nach (Tagen)</label>
-              <input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert">
-              <p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p>
-            </div>
-            <div>
-              <label>Standard Follow-up nach (Tagen)</label>
-              <input id="setFollowupDays" type="number" min="1" max="60" value="14">
-            </div>
+            <div><label>Auto-Archivierung nach (Tagen)</label><input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert"><p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p></div>
+            <div><label>Standard Follow-up nach (Tagen)</label><input id="setFollowupDays" type="number" min="1" max="60" value="14"></div>
           </div>
           <button class="btn primary" onclick="saveSettingsBlock('bewerbungen')">Speichern</button>
         </div>
@@ -459,15 +406,11 @@
         </div>
       </div>
       <div class="card settings-about">
-        <div class="settings-about-logo">
-          <img src="/logo.png" alt="JobRadar Logo" style="width:64px;height:64px;object-fit:contain;border-radius:14px;">
-        </div>
+        <div class="settings-about-logo"><img src="/logo.png" alt="JobRadar Logo" style="width:64px;height:64px;object-fit:contain;border-radius:14px;"></div>
         <div class="settings-about-name">JobRadar</div>
         <div class="settings-about-version" id="settingsVersion">Version wird geladen…</div>
         <a class="btn" href="https://github.com/freddykrueger88/JobRadar" target="_blank" rel="noopener noreferrer" style="margin-top:12px;gap:8px">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
           GitHub öffnen
         </a>
       </div>
@@ -485,32 +428,11 @@
     <button class="modal-close" onclick="document.getElementById('modalManuell').style.display='none'">&#x2715;</button>
     <h2>Bewerbung hinzufügen</h2>
     <div class="stack" style="margin-top:16px">
-      <div class="row">
-        <div><label>Stelle / Titel *</label><input id="mTitel" placeholder="z. B. IT Support Specialist"></div>
-        <div><label>Firma *</label><input id="mFirma" placeholder="z. B. Beispiel GmbH"></div>
-      </div>
-      <div class="row">
-        <div><label>Ort</label><input id="mOrt" placeholder="z. B. Berlin, Remote"></div>
-        <div><label>Status</label>
-          <select id="mStatus">
-            <option value="beworben">Beworben</option>
-            <option value="interview">Interview</option>
-            <option value="angenommen">Angenommen</option>
-            <option value="abgelehnt">Abgelehnt</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div><label>Beworben am</label><input id="mBeworbenAm" type="date"></div>
-        <div><label>Follow-up</label><input id="mFollowup" type="date"></div>
-      </div>
+      <div class="row"><div><label>Stelle / Titel *</label><input id="mTitel" placeholder="z. B. IT Support Specialist"></div><div><label>Firma *</label><input id="mFirma" placeholder="z. B. Beispiel GmbH"></div></div>
+      <div class="row"><div><label>Ort</label><input id="mOrt" placeholder="z. B. Berlin, Remote"></div><div><label>Status</label><select id="mStatus"><option value="beworben">Beworben</option><option value="interview">Interview</option><option value="angenommen">Angenommen</option><option value="abgelehnt">Abgelehnt</option></select></div></div>
+      <div class="row"><div><label>Beworben am</label><input id="mBeworbenAm" type="date"></div><div><label>Follow-up</label><input id="mFollowup" type="date"></div></div>
       <div><label>Stellenlink (URL)</label><input id="mUrl" type="url" placeholder="https://…"></div>
-      <div>
-        <label>📄 Lebenslauf (CV-Vault)</label>
-        <select id="mVaultSelect" style="width:100%">
-          <option value="">— kein CV verknüpft —</option>
-        </select>
-      </div>
+      <div><label>📄 Lebenslauf (CV-Vault)</label><select id="mVaultSelect" style="width:100%"><option value="">— kein CV verknüpft —</option></select></div>
       <div><label>Notizen</label><textarea id="mNotizen" rows="3" placeholder="Ansprechpartner, Gehalt, Eindrücke…"></textarea></div>
       <div class="footerbar">
         <button class="btn primary" onclick="manuellSpeichern()">✓ Speichern</button>
@@ -548,6 +470,42 @@
 <script src="/js/modules/suche.js"></script>
 <script src="/js/app.js"></script>
 <script>
+// Drawer-Logik für Mobile
+function toggleDrawer() {
+  const drawer = document.getElementById('bottomNavDrawer');
+  const backdrop = document.getElementById('drawerBackdrop');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    closeDrawer();
+  } else {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+  }
+}
+function closeDrawer() {
+  document.getElementById('bottomNavDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+// Router: Bottom-Nav aktiv-Status synchronisieren
+document.addEventListener('DOMContentLoaded', () => {
+  const origNavigate = router.navigate.bind(router);
+  router.navigate = function(hash, pushState) {
+    origNavigate(hash, pushState);
+    // Bottom-Nav Items updaten
+    document.querySelectorAll('.bottom-nav-item[data-nav]').forEach(el => {
+      el.classList.toggle('active', el.dataset.nav === hash);
+    });
+    // Drawer-Items updaten
+    document.querySelectorAll('.drawer-item[data-nav]').forEach(el => {
+      el.classList.toggle('active', el.dataset.nav === hash);
+    });
+    // Mehr-Button hervorheben wenn eine Drawer-Route aktiv ist
+    const drawerRoutes = ['kanban','ki-verlauf','vorlagen','vault','erfahrungen','profil','einstellungen'];
+    document.getElementById('moreBtn')?.classList.toggle('active', drawerRoutes.includes(hash));
+  };
+});
+
+// Theme / Mode
 (function() {
   const lightBtn  = document.getElementById('lightModeBtn');
   const darkBtn   = document.getElementById('darkModeBtn');
