@@ -1,79 +1,49 @@
-const express  = require('express');
-const router   = express.Router();
-const multer   = require('multer');
-const path     = require('path');
-const fs       = require('fs');
-const db       = require('../db/database');
+'use strict';
 
-const VAULT_DIR = path.resolve(process.env.VAULT_PATH || path.join(__dirname, '../../data/vault'));
-fs.mkdirSync(VAULT_DIR, { recursive: true });
+const router = require('express').Router();
+const multer = require('multer');
+const path   = require('path');
+const { v4: uuid } = require('uuid');
+const svc    = require('../services/vault.service');
+const fs     = require('fs');
 
-// ── Hilfsfunktion: Pfad-Traversal verhindern ────────────────────────────────
-function safePath(filename) {
-  const resolved = path.resolve(VAULT_DIR, path.basename(filename));
-  if (!resolved.startsWith(VAULT_DIR + path.sep) && resolved !== VAULT_DIR) {
-    return null;
-  }
-  return resolved;
-}
+fs.mkdirSync(svc.VAULT_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, VAULT_DIR),
-  filename:    (req, file, cb) => {
-    const ts   = Date.now();
-    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${ts}_${safe}`);
-  }
+  destination: svc.VAULT_DIR,
+  filename: (_, file, cb) => cb(null, `${uuid()}${path.extname(file.originalname)}`)
 });
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ok = ['application/pdf','application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ].includes(file.mimetype);
-    cb(ok ? null : new Error('Nur PDF/DOCX erlaubt'), ok);
-  }
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+router.get('/',  (req, res, next) => {
+  try { res.json(svc.getAll()); }
+  catch (e) { next(e); }
 });
 
-// GET  /api/vault
-router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM lebenslauf_vault ORDER BY hochgeladen_am DESC').all();
-  res.json(rows);
+router.post('/', upload.single('datei'), (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Keine Datei' });
+    res.status(201).json(svc.create({
+      name:         req.body.name || req.file.originalname,
+      dateiname:    req.file.filename,
+      originalname: req.file.originalname,
+      groesse:      req.file.size,
+      notiz:        req.body.notiz
+    }));
+  } catch (e) { next(e); }
 });
 
-// POST /api/vault
-router.post('/', upload.single('datei'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Keine Datei.' });
-  const name = (req.body.name || req.file.originalname).trim().slice(0, 200);
-  const notiz = (req.body.notiz || '').trim().slice(0, 500);
-  const r = db.prepare(
-    'INSERT INTO lebenslauf_vault (name, dateiname, originalname, groesse, notiz) VALUES (?,?,?,?,?)'
-  ).run(name, req.file.filename, req.file.originalname, req.file.size, notiz || null);
-  res.status(201).json({ id: r.lastInsertRowid, name, dateiname: req.file.filename });
+router.get('/:id/download', (req, res, next) => {
+  try {
+    const info = svc.getFilePath(+req.params.id);
+    if (!info) return res.status(404).json({ error: 'Nicht gefunden' });
+    res.download(info.filePath, info.originalname);
+  } catch (e) { next(e); }
 });
 
-// GET  /api/vault/:id/download
-router.get('/:id/download', (req, res) => {
-  const row = db.prepare('SELECT * FROM lebenslauf_vault WHERE id=?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  const filePath = safePath(row.dateiname);
-  if (!filePath) return res.status(400).json({ error: 'Ungültiger Dateipfad.' });
-  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Datei fehlt' });
-  res.download(filePath, row.originalname);
-});
-
-// DELETE /api/vault/:id
-router.delete('/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM lebenslauf_vault WHERE id=?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  const filePath = safePath(row.dateiname);
-  if (filePath) {
-    try { fs.unlinkSync(filePath); }
-    catch (e) { console.warn(`[vault] Datei konnte nicht gelöscht werden: ${filePath} – ${e.message}`); }
-  }
-  db.prepare('DELETE FROM lebenslauf_vault WHERE id=?').run(req.params.id);
-  res.json({ ok: true });
+router.delete('/:id', (req, res, next) => {
+  try { svc.remove(+req.params.id); res.status(204).end(); }
+  catch (e) { next(e); }
 });
 
 module.exports = router;
