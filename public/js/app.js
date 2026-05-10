@@ -9,24 +9,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (_) {}
 
   // Haupt-Routen
-  router.register('dashboard',        () => dashboard.init());
-  router.register('suche',            () => sucheModule.init());
-  router.register('bewerbungen',      () => bewerbungenModule.init());
-  router.register('kanban',           () => kanbanModule ? kanbanModule.init() : _legacyInit('kanban'));
-  router.register('ki',               () => kiModule.init());
-  router.register('ki-verlauf',       () => _legacyInit('anschreiben-verlauf'));
-  router.register('vorlagen',         () => _legacyInit('vorlagen'));
-  router.register('erfahrungen',      () => _legacyInit('erfahrungen'));
-  router.register('vault',            () => _legacyInit('vault'));
-  router.register('einstellungen',    () => einstellungenModule.init());
-  router.register('import',           () => importModule.init());
+  router.register('dashboard',     () => dashboard.init());
+  router.register('suche',         () => sucheModule.init());
+  router.register('bewerbungen',   () => bewerbungenModule.init());
+  router.register('kanban',        () => kanbanModule ? kanbanModule.init() : _legacyInit('kanban'));
+  router.register('ki',            () => kiModule.init());
+  router.register('ki-verlauf',    () => _legacyInit('ki-verlauf'));
+  router.register('vorlagen',      () => _legacyInit('vorlagen'));
+  router.register('erfahrungen',   () => _legacyInit('erfahrungen'));
+  router.register('vault',         () => _legacyInit('vault'));
+  router.register('einstellungen', () => einstellungenModule.init());
+  router.register('import',        () => importModule.init());
 
   router.register('profil', async () => {
     const [profil, erf] = await Promise.all([api.profil.get(), api.erfahrungen.get()]);
     state.set('profil', profil);
     state.set('erfahrungen', erf);
     if (window.erfahrungenModule) erfahrungenModule.init(profil, erf);
-    _showPanel('profil');
   });
 
   setInterval(() => {
@@ -36,19 +35,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   router.start('dashboard');
 });
 
-// Panels ohne eigenes Modul einfach einblenden
+/**
+ * Legacy-Panels ohne eigenes Modul.
+ * Das Ein-/Ausblenden übernimmt bereits router.navigate() —
+ * hier nur noch zusätzliche Initialisierung falls nötig.
+ */
 function _legacyInit(panelId) {
-  _showPanel(panelId);
-  // Vault initialisieren falls verfügbar
-  if (panelId === 'vault' && window._vaultInit) window._vaultInit();
-  // KI-Verlauf
-  if (panelId === 'anschreiben-verlauf' && window.ladeAnschreibenVerlauf) window.ladeAnschreibenVerlauf();
-}
-
-function _showPanel(id) {
-  document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
-  const panel = document.getElementById(id);
-  if (panel) panel.classList.add('active');
+  if (panelId === 'vault'        && window._vaultInit)              window._vaultInit();
+  if (panelId === 'ki-verlauf'   && window.ladeAnschreibenVerlauf)  window.ladeAnschreibenVerlauf();
 }
 
 function _applyDarkMode(mode) {

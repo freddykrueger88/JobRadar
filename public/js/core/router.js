@@ -46,10 +46,10 @@ const router = (() => {
   }
 
   // Routen-Alias: Route-Name → Panel-ID falls abweichend
+  // Hinweis: 'ki' hat ein eigenes tabpanel (id='ki'), kein Alias nötig.
   function _panelAlias(hash) {
     const aliases = {
       'ki-verlauf': 'anschreiben-verlauf',
-      'ki':         'anschreiben'
     };
     return aliases[hash] || hash;
   }
