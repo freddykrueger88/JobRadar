@@ -5,7 +5,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const cfg = await api.einstellungen.get();
     state.set('einstellungen', cfg);
-    _applyDarkMode(cfg.dark_mode || 'auto');
+    
+    // Verbessertes Theme-Handling: Unterstützt nun alle Themen-Varianten
+    const theme = cfg.dark_mode || 'auto';
+    _applyTheme(theme);
   } catch (_) {}
 
   // Haupt-Routen
@@ -37,18 +40,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /**
  * Legacy-Panels ohne eigenes Modul.
- * Das Ein-/Ausblenden übernimmt bereits router.navigate() —
- * hier nur noch zusätzliche Initialisierung falls nötig.
  */
 function _legacyInit(panelId) {
   if (panelId === 'vault'        && window._vaultInit)              window._vaultInit();
   if (panelId === 'ki-verlauf'   && window.ladeAnschreibenVerlauf)  window.ladeAnschreibenVerlauf();
 }
 
-function _applyDarkMode(mode) {
+/**
+ * Wendet das gewählte Theme auf das Dokument an.
+ * Unterstützt explizite Themen (dark, light, blue, green, purple, server)
+ * sowie den 'auto' Modus basierend auf Systemeinstellungen.
+ */
+function _applyTheme(mode) {
   const root = document.documentElement;
-  if (mode === 'dark')  { root.setAttribute('data-theme', 'dark');  return; }
-  if (mode === 'light') { root.setAttribute('data-theme', 'light'); return; }
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  
+  if (mode === 'auto') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    // Validiert, ob das Theme existiert, ansonsten Fallback auf dark
+    const validThemes = ['dark', 'light', 'blue', 'green', 'purple', 'server'];
+    const theme = validThemes.includes(mode) ? mode : 'dark';
+    root.setAttribute('data-theme', theme);
+  }
 }
+
+// Global verfügbar machen, damit Module es nutzen können
+window._applyTheme = _applyTheme;
