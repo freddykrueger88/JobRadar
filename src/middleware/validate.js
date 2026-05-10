@@ -1,14 +1,24 @@
-const { validationResult } = require('express-validator');
+'use strict';
 
 /**
- * Middleware: Gibt 422 zurück wenn Validierungsfehler vorhanden
+ * Zod-Validierungs-Middleware
+ * Verwendung: router.post('/', validate(MeinSchema), handler)
  */
-function validate(req, res, next) {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
-  next();
+function validate(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validierungsfehler',
+        details: result.error.errors.map(e => ({
+          feld:    e.path.join('.'),
+          problem: e.message
+        }))
+      });
+    }
+    req.body = result.data;
+    next();
+  };
 }
 
 module.exports = { validate };
