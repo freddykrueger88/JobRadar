@@ -1,24 +1,21 @@
-/* ═══════════════════════════════════════════════
+/* ===============================================
    MOBILE BOTTOM NAVIGATION
    Sichtbar nur bei max-width: 640px
-   ═══════════════════════════════════════════════ */
+   =============================================== */
 
 .bottom-nav {
   display: none;
 }
 
 @media (max-width: 640px) {
-  /* Body-Padding damit Inhalt nicht hinter der Nav verschwindet */
   body {
     padding-bottom: 72px;
   }
 
-  /* Desktop-Tabs auf Mobile ausblenden */
   .tabs {
     display: none !important;
   }
 
-  /* Bottom-Nav einblenden */
   .bottom-nav {
     display: flex;
     position: fixed;
@@ -73,7 +70,6 @@
     max-width: 56px;
   }
 
-  /* "Mehr"-Drawer: aufklappbares Menü für seltenere Tabs */
   .bottom-nav-drawer {
     position: fixed;
     bottom: 64px;
@@ -142,7 +138,6 @@
     display: block;
   }
 
-  /* Server Room Theme */
   [data-theme=server] .bottom-nav {
     background: #0a0e0a;
     border-color: #1a2e1a;

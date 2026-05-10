@@ -67,38 +67,17 @@
     </button>
   </nav>
 
-  <!-- Mehr-Drawer (Mobile) -->
+  <!-- Mehr-Drawer -->
   <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
   <div class="bottom-nav-drawer" id="bottomNavDrawer">
     <div class="drawer-grid">
-      <button class="drawer-item" data-nav="kanban" onclick="closeDrawer(); router.navigate('kanban')">
-        <span class="drawer-item-icon">🗂</span>
-        <span>Kanban</span>
-      </button>
-      <button class="drawer-item" data-nav="ki-verlauf" onclick="closeDrawer(); router.navigate('ki-verlauf')">
-        <span class="drawer-item-icon">📝</span>
-        <span>KI-Verlauf</span>
-      </button>
-      <button class="drawer-item" data-nav="vorlagen" onclick="closeDrawer(); router.navigate('vorlagen')">
-        <span class="drawer-item-icon">🎨</span>
-        <span>KI-Stile</span>
-      </button>
-      <button class="drawer-item" data-nav="vault" onclick="closeDrawer(); router.navigate('vault')">
-        <span class="drawer-item-icon">📄</span>
-        <span>CV-Vault</span>
-      </button>
-      <button class="drawer-item" data-nav="erfahrungen" onclick="closeDrawer(); router.navigate('erfahrungen')">
-        <span class="drawer-item-icon">🛠</span>
-        <span>Erfahrungen</span>
-      </button>
-      <button class="drawer-item" data-nav="profil" onclick="closeDrawer(); router.navigate('profil')">
-        <span class="drawer-item-icon">👤</span>
-        <span>Profil</span>
-      </button>
-      <button class="drawer-item" data-nav="einstellungen" onclick="closeDrawer(); router.navigate('einstellungen')">
-        <span class="drawer-item-icon">⚙️</span>
-        <span>Einstellungen</span>
-      </button>
+      <button class="drawer-item" data-nav="kanban" onclick="closeDrawer(); router.navigate('kanban')"><span class="drawer-item-icon">🗂</span><span>Kanban</span></button>
+      <button class="drawer-item" data-nav="ki-verlauf" onclick="closeDrawer(); router.navigate('ki-verlauf')"><span class="drawer-item-icon">📝</span><span>KI-Verlauf</span></button>
+      <button class="drawer-item" data-nav="vorlagen" onclick="closeDrawer(); router.navigate('vorlagen')"><span class="drawer-item-icon">🎨</span><span>KI-Stile</span></button>
+      <button class="drawer-item" data-nav="vault" onclick="closeDrawer(); router.navigate('vault')"><span class="drawer-item-icon">📄</span><span>CV-Vault</span></button>
+      <button class="drawer-item" data-nav="erfahrungen" onclick="closeDrawer(); router.navigate('erfahrungen')"><span class="drawer-item-icon">🛠</span><span>Erfahrungen</span></button>
+      <button class="drawer-item" data-nav="profil" onclick="closeDrawer(); router.navigate('profil')"><span class="drawer-item-icon">👤</span><span>Profil</span></button>
+      <button class="drawer-item" data-nav="einstellungen" onclick="closeDrawer(); router.navigate('einstellungen')"><span class="drawer-item-icon">⚙️</span><span>Einstellungen</span></button>
     </div>
   </div>
 
@@ -241,43 +220,28 @@
   <!-- KI-Stile -->
   <div class="tabpanel" id="vorlagen" role="tabpanel">
     <div class="vorlage-layout">
-      <div><div class="card">
-        <h2>🎨 Gespeicherte KI-Stile</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Stile steuern Ton, Länge und besondere Hinweise die die KI beim Erstellen des Anschreibens berücksichtigt.</p>
-        <div id="vorlagenList"></div>
-      </div></div>
-      <div><div class="card">
-        <h2>Neuen Stil erstellen</h2>
-        <div class="stack">
-          <div><label>Name</label><input id="vorlageName" placeholder="z. B. IT Support formell"></div>
-          <div class="row">
-            <div><label>Ton</label><select id="vorlageTon"><option value="formell">Formell &amp; professionell</option><option value="modern">Modern &amp; direkt</option><option value="kreativ">Kreativ &amp; ausdrucksstark</option><option value="kurz">Sehr kurz &amp; prägnant</option></select></div>
-            <div><label>Länge</label><select id="vorlageLaenge"><option value="kurz">Kurz (~120 Wörter)</option><option value="mittel" selected>Mittel (~220 Wörter)</option><option value="lang">Lang (~350 Wörter)</option></select></div>
-          </div>
-          <div><label>Sprache</label><select id="vorlageSprache"><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div>
-          <div><label>Besondere Hinweise für die KI</label><textarea id="vorlageHinweise" rows="4" placeholder="z. B. Betone Linux-Erfahrung und Open-Source-Begeisterung. Keine Floskeln."></textarea></div>
-          <button class="btn primary" onclick="saveVorlage()">Stil speichern</button>
+      <div><div class="card"><h2>🎨 Gespeicherte KI-Stile</h2><p class="muted" style="font-size:14px;margin-bottom:16px">Stile steuern Ton, Länge und besondere Hinweise die die KI beim Erstellen des Anschreibens berücksichtigt.</p><div id="vorlagenList"></div></div></div>
+      <div><div class="card"><h2>Neuen Stil erstellen</h2><div class="stack">
+        <div><label>Name</label><input id="vorlageName" placeholder="z. B. IT Support formell"></div>
+        <div class="row">
+          <div><label>Ton</label><select id="vorlageTon"><option value="formell">Formell &amp; professionell</option><option value="modern">Modern &amp; direkt</option><option value="kreativ">Kreativ &amp; ausdrucksstark</option><option value="kurz">Sehr kurz &amp; prägnant</option></select></div>
+          <div><label>Länge</label><select id="vorlageLaenge"><option value="kurz">Kurz (~120 Wörter)</option><option value="mittel" selected>Mittel (~220 Wörter)</option><option value="lang">Lang (~350 Wörter)</option></select></div>
         </div>
-      </div></div>
+        <div><label>Sprache</label><select id="vorlageSprache"><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div>
+        <div><label>Besondere Hinweise für die KI</label><textarea id="vorlageHinweise" rows="4" placeholder="z. B. Betone Linux-Erfahrung und Open-Source-Begeisterung. Keine Floskeln."></textarea></div>
+        <button class="btn primary" onclick="saveVorlage()">Stil speichern</button>
+      </div></div></div>
     </div>
   </div>
 
   <!-- Erfahrungen -->
   <div class="tabpanel" id="erfahrungen" role="tabpanel">
     <div class="erfahrungen-layout">
-      <div class="card">
-        <h2>🛠 Skills &amp; Technologien</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Skills fließen in den Match-Score ein und werden der KI beim Anschreiben mitgegeben.</p>
-        <div class="skill-add-row">
-          <input id="skillName" placeholder="z. B. Linux, Docker, Proxmox…" style="flex:1">
-          <select id="skillLevel"><option value="Anfänger">Anfänger</option><option value="Fortgeschritten" selected>Fortgeschritten</option><option value="Experte">Experte</option></select>
-          <button class="btn primary" onclick="addSkill()">+ Hinzufügen</button>
-        </div>
+      <div class="card"><h2>🛠 Skills &amp; Technologien</h2><p class="muted" style="font-size:14px;margin-bottom:16px">Skills fließen in den Match-Score ein und werden der KI beim Anschreiben mitgegeben.</p>
+        <div class="skill-add-row"><input id="skillName" placeholder="z. B. Linux, Docker, Proxmox…" style="flex:1"><select id="skillLevel"><option value="Anfänger">Anfänger</option><option value="Fortgeschritten" selected>Fortgeschritten</option><option value="Experte">Experte</option></select><button class="btn primary" onclick="addSkill()">+ Hinzufügen</button></div>
         <div id="skillsList" style="margin-top:16px"></div>
       </div>
-      <div class="card">
-        <h2>🏢 Berufsstationen</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Beschreibe deine Tätigkeiten – die KI zieht sich relevante Punkte für das Anschreiben heraus.</p>
+      <div class="card"><h2>🏢 Berufsstationen</h2><p class="muted" style="font-size:14px;margin-bottom:16px">Beschreibe deine Tätigkeiten – die KI zieht sich relevante Punkte für das Anschreiben heraus.</p>
         <div class="stack">
           <div class="row"><div><label>Firma / Arbeitgeber</label><input id="stFirma" placeholder="z. B. Muster GmbH"></div><div><label>Rolle / Position</label><input id="stRolle" placeholder="z. B. IT-Techniker"></div></div>
           <div class="row"><div><label>Von</label><input id="stVon" type="month"></div><div><label>Bis (leer = aktuell)</label><input id="stBis" type="month"></div></div>
@@ -286,8 +250,7 @@
         </div>
         <div id="stationenList" style="margin-top:20px"></div>
       </div>
-      <div class="card">
-        <h2>🎓 Ausbildung &amp; Zertifikate</h2>
+      <div class="card"><h2>🎓 Ausbildung &amp; Zertifikate</h2>
         <div class="stack">
           <div class="row"><div><label>Titel / Abschluss</label><input id="zertTitel" placeholder="z. B. Fachinformatiker Systemintegration"></div><div><label>Jahr</label><input id="zertJahr" type="number" placeholder="2020" min="1970" max="2099"></div></div>
           <div><label>Institution</label><input id="zertInstitution" placeholder="z. B. BBS Verden, Udemy, IHK…"></div>
@@ -296,16 +259,12 @@
         <div id="zertifikateList" style="margin-top:16px"></div>
       </div>
     </div>
-    <div style="margin-top:20px;text-align:right">
-      <button class="btn primary" onclick="saveErfahrungen()">💾 Alle Erfahrungen speichern</button>
-    </div>
+    <div style="margin-top:20px;text-align:right"><button class="btn primary" onclick="saveErfahrungen()">💾 Alle Erfahrungen speichern</button></div>
   </div>
 
   <!-- CV-Vault -->
   <div class="tabpanel" id="vault" role="tabpanel">
-    <div class="card">
-      <h2>📄 Lebenslauf-Vault</h2>
-      <p class="muted" style="font-size:14px;margin-bottom:20px">Speichere mehrere Lebenslauf-Versionen und verknüpfe pro Bewerbung welchen CV du geschickt hast.</p>
+    <div class="card"><h2>📄 Lebenslauf-Vault</h2><p class="muted" style="font-size:14px;margin-bottom:20px">Speichere mehrere Lebenslauf-Versionen und verknüpfe pro Bewerbung welchen CV du geschickt hast.</p>
       <div class="vault-upload-row">
         <input type="text" id="vaultName" placeholder="Name z. B. CV v3 – IT Support 2026" style="flex:2;min-width:180px">
         <input type="file" id="vaultDatei" accept=".pdf,.doc,.docx" style="flex:2;min-width:180px">
@@ -318,34 +277,28 @@
 
   <!-- Profil -->
   <div class="tabpanel" id="profil" role="tabpanel">
-    <div class="card">
-      <h2>Mein Profil</h2>
-      <div class="stack">
-        <div class="row"><div><label>Name</label><input id="name"></div><div><label>E-Mail</label><input id="email" type="email"></div></div>
-        <div class="row"><div><label>Zielrollen</label><input id="rollen" placeholder="z. B. IT Administrator, IT Support…"></div><div><label>Ort / Remote</label><input id="ort" placeholder="z. B. Remote, Deutschland…"></div></div>
-        <div class="row"><div><label>Keywords</label><input id="keywords" placeholder="Linux, Docker, Ansible…"></div><div><label>Blacklist</label><input id="blacklist" placeholder="SAP, Vertrieb…"></div></div>
-        <div><label>Kurzprofil</label><textarea id="kurzprofil" rows="4" placeholder="Dein kurzes berufliches Profil…"></textarea></div>
-        <div><label>Stärken / Skills</label><textarea id="staerken" rows="3" placeholder="Linux, Docker, Proxmox, Troubleshooting…"></textarea></div>
-        <button class="btn primary" onclick="saveProfil()">Profil speichern</button>
-      </div>
-    </div>
+    <div class="card"><h2>Mein Profil</h2><div class="stack">
+      <div class="row"><div><label>Name</label><input id="name"></div><div><label>E-Mail</label><input id="email" type="email"></div></div>
+      <div class="row"><div><label>Zielrollen</label><input id="rollen" placeholder="z. B. IT Administrator, IT Support…"></div><div><label>Ort / Remote</label><input id="ort" placeholder="z. B. Remote, Deutschland…"></div></div>
+      <div class="row"><div><label>Keywords</label><input id="keywords" placeholder="Linux, Docker, Ansible…"></div><div><label>Blacklist</label><input id="blacklist" placeholder="SAP, Vertrieb…"></div></div>
+      <div><label>Kurzprofil</label><textarea id="kurzprofil" rows="4" placeholder="Dein kurzes berufliches Profil…"></textarea></div>
+      <div><label>Stärken / Skills</label><textarea id="staerken" rows="3" placeholder="Linux, Docker, Proxmox, Troubleshooting…"></textarea></div>
+      <button class="btn primary" onclick="saveProfil()">Profil speichern</button>
+    </div></div>
   </div>
 
   <!-- Einstellungen -->
   <div class="tabpanel" id="einstellungen" role="tabpanel">
     <div class="settings-page">
-      <div class="card">
-        <h2>🌟 Erscheinungsbild</h2>
-        <div class="settings-section">
-          <label class="settings-row-label">Modus</label>
+      <div class="card"><h2>🌟 Erscheinungsbild</h2>
+        <div class="settings-section"><label class="settings-row-label">Modus</label>
           <div class="theme-toggle-row">
             <button class="theme-toggle-btn active" id="lightModeBtn" onclick="setMode('light')">☀️ Light</button>
             <button class="theme-toggle-btn" id="darkModeBtn" onclick="setMode('dark')">🌙 Dark</button>
             <button class="theme-toggle-btn" id="serverModeBtn" onclick="setMode('server')">🟢 Server Room</button>
           </div>
         </div>
-        <div class="settings-section" style="margin-top:20px">
-          <label class="settings-row-label" for="themeSelect">Farbthema</label>
+        <div class="settings-section" style="margin-top:20px"><label class="settings-row-label" for="themeSelect">Farbthema</label>
           <select id="themeSelect" onchange="setTheme(this.value)" style="max-width:260px">
             <option value="teal">🟢 Teal (Standard)</option>
             <option value="blue">🔵 Blau</option>
@@ -356,55 +309,36 @@
           <p class="muted" style="font-size:12px;margin-top:6px">Farbthema gilt nur für Light- und Dark-Modus. Server Room hat ein eigenes Grün.</p>
         </div>
       </div>
-      <div class="card">
-        <h2>🔍 Standard-Sucheinstellungen</h2>
-        <div class="stack">
-          <div class="row">
-            <div><label>Standard-Quelle</label><select id="setDefaultQuelle"><option value="all">Alle Quellen</option><option value="arbeitnow">Arbeitnow</option><option value="jobicy">Jobicy (Remote)</option><option value="arbeitsagentur">Arbeitsagentur</option><option value="themuse">The Muse</option><option value="remotive">Remotive (Remote)</option><option value="adzuna">Adzuna</option><option value="jooble">Jooble</option></select></div>
-            <div><label>Standard-Umkreis</label><select id="setDefaultRadius"><option value="0">Kein Umkreis</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option></select></div>
-            <div><label>Max. Treffer</label><input id="setDefaultCount" type="number" min="1" max="30" value="15"></div>
-          </div>
-          <button class="btn primary" onclick="saveSettingsBlock('suche')">Speichern</button>
+      <div class="card"><h2>🔍 Standard-Sucheinstellungen</h2><div class="stack">
+        <div class="row">
+          <div><label>Standard-Quelle</label><select id="setDefaultQuelle"><option value="all">Alle Quellen</option><option value="arbeitnow">Arbeitnow</option><option value="jobicy">Jobicy (Remote)</option><option value="arbeitsagentur">Arbeitsagentur</option><option value="themuse">The Muse</option><option value="remotive">Remotive (Remote)</option><option value="adzuna">Adzuna</option><option value="jooble">Jooble</option></select></div>
+          <div><label>Standard-Umkreis</label><select id="setDefaultRadius"><option value="0">Kein Umkreis</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option></select></div>
+          <div><label>Max. Treffer</label><input id="setDefaultCount" type="number" min="1" max="30" value="15"></div>
         </div>
-      </div>
-      <div class="card">
-        <h2>✨ KI-Standardwerte</h2>
-        <div class="stack">
-          <div class="row">
-            <div><label>Standard-Modell</label><input id="setDefaultKiModel" placeholder="z. B. mistral"></div>
-            <div><label>Standard-Sprache</label><select id="setDefaultKiSprache"><option value="">Nicht festlegen</option><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div>
-          </div>
-          <button class="btn primary" onclick="saveSettingsBlock('ki')">Speichern</button>
+        <button class="btn primary" onclick="saveSettingsBlock('suche')">Speichern</button>
+      </div></div>
+      <div class="card"><h2>✨ KI-Standardwerte</h2><div class="stack">
+        <div class="row"><div><label>Standard-Modell</label><input id="setDefaultKiModel" placeholder="z. B. mistral"></div><div><label>Standard-Sprache</label><select id="setDefaultKiSprache"><option value="">Nicht festlegen</option><option value="deutsch">Deutsch</option><option value="englisch">Englisch</option></select></div></div>
+        <button class="btn primary" onclick="saveSettingsBlock('ki')">Speichern</button>
+      </div></div>
+      <div class="card"><h2>📋 Bewerbungen</h2><div class="stack">
+        <div class="row">
+          <div><label>Auto-Archivierung nach (Tagen)</label><input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert"><p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p></div>
+          <div><label>Standard Follow-up nach (Tagen)</label><input id="setFollowupDays" type="number" min="1" max="60" value="14"></div>
         </div>
-      </div>
-      <div class="card">
-        <h2>📋 Bewerbungen</h2>
-        <div class="stack">
-          <div class="row">
-            <div><label>Auto-Archivierung nach (Tagen)</label><input id="setAutoArchiveDays" type="number" min="0" max="365" placeholder="0 = deaktiviert"><p class="muted" style="font-size:12px;margin-top:4px">0 = aus.</p></div>
-            <div><label>Standard Follow-up nach (Tagen)</label><input id="setFollowupDays" type="number" min="1" max="60" value="14"></div>
-          </div>
-          <button class="btn primary" onclick="saveSettingsBlock('bewerbungen')">Speichern</button>
-        </div>
-      </div>
-      <div class="card">
-        <h2>💾 Daten &amp; Backup</h2>
+        <button class="btn primary" onclick="saveSettingsBlock('bewerbungen')">Speichern</button>
+      </div></div>
+      <div class="card"><h2>💾 Daten &amp; Backup</h2>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <button class="btn primary" onclick="exportBackup()">⬇️ Export (JSON)</button>
           <button class="btn" onclick="importBackup()">⬆️ Import (JSON)</button>
           <button class="btn" style="color:var(--error);border-color:var(--error)" onclick="resetDatabase()">🗑 Datenbank zurücksetzen</button>
         </div>
       </div>
-      <div class="card">
-        <h2>🖥 Oberfläche</h2>
-        <div class="stack">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:0">
-            <input type="checkbox" id="setCompactView" style="width:16px;height:16px">
-            Kompakte Ansicht
-          </label>
-          <button class="btn primary" onclick="saveSettingsBlock('ui')">Speichern</button>
-        </div>
-      </div>
+      <div class="card"><h2>🖥 Oberfläche</h2><div class="stack">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:0"><input type="checkbox" id="setCompactView" style="width:16px;height:16px"> Kompakte Ansicht</label>
+        <button class="btn primary" onclick="saveSettingsBlock('ui')">Speichern</button>
+      </div></div>
       <div class="card settings-about">
         <div class="settings-about-logo"><img src="/logo.png" alt="JobRadar Logo" style="width:64px;height:64px;object-fit:contain;border-radius:14px;"></div>
         <div class="settings-about-name">JobRadar</div>
@@ -470,45 +404,29 @@
 <script src="/js/modules/suche.js"></script>
 <script src="/js/app.js"></script>
 <script>
-// Drawer-Logik für Mobile
 function toggleDrawer() {
   const drawer = document.getElementById('bottomNavDrawer');
   const backdrop = document.getElementById('drawerBackdrop');
-  const isOpen = drawer.classList.contains('open');
-  if (isOpen) {
-    closeDrawer();
-  } else {
-    drawer.classList.add('open');
-    backdrop.classList.add('open');
-  }
+  if (drawer.classList.contains('open')) { closeDrawer(); }
+  else { drawer.classList.add('open'); backdrop.classList.add('open'); }
 }
 function closeDrawer() {
   document.getElementById('bottomNavDrawer').classList.remove('open');
   document.getElementById('drawerBackdrop').classList.remove('open');
 }
-// Router: Bottom-Nav aktiv-Status synchronisieren
 document.addEventListener('DOMContentLoaded', () => {
   const origNavigate = router.navigate.bind(router);
   router.navigate = function(hash, pushState) {
     origNavigate(hash, pushState);
-    // Bottom-Nav Items updaten
-    document.querySelectorAll('.bottom-nav-item[data-nav]').forEach(el => {
-      el.classList.toggle('active', el.dataset.nav === hash);
-    });
-    // Drawer-Items updaten
-    document.querySelectorAll('.drawer-item[data-nav]').forEach(el => {
-      el.classList.toggle('active', el.dataset.nav === hash);
-    });
-    // Mehr-Button hervorheben wenn eine Drawer-Route aktiv ist
+    document.querySelectorAll('.bottom-nav-item[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === hash));
+    document.querySelectorAll('.drawer-item[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === hash));
     const drawerRoutes = ['kanban','ki-verlauf','vorlagen','vault','erfahrungen','profil','einstellungen'];
     document.getElementById('moreBtn')?.classList.toggle('active', drawerRoutes.includes(hash));
   };
 });
-
-// Theme / Mode
 (function() {
-  const lightBtn  = document.getElementById('lightModeBtn');
-  const darkBtn   = document.getElementById('darkModeBtn');
+  const lightBtn = document.getElementById('lightModeBtn');
+  const darkBtn  = document.getElementById('darkModeBtn');
   const serverBtn = document.getElementById('serverModeBtn');
   const themeSelect = document.getElementById('themeSelect');
   const themes = {
@@ -523,34 +441,24 @@ document.addEventListener('DOMContentLoaded', () => {
   applyMode(savedMode);
   if (savedMode !== 'server') applyTheme(savedTheme);
   if (themeSelect) themeSelect.value = savedTheme;
-
-  fetch('/api/version').then(r=>r.json()).then(d=>{
-    const el = document.getElementById('settingsVersion');
-    if (el) el.textContent = 'Version ' + (d.version || '–');
-  }).catch(()=>{
-    const el = document.getElementById('settingsVersion');
-    if (el) el.textContent = 'Version 2.0.0';
-  });
-
+  fetch('/api/version').then(r=>r.json()).then(d=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version '+(d.version||'–'); }).catch(()=>{ const el=document.getElementById('settingsVersion'); if(el) el.textContent='Version 2.0.0'; });
   window.setMode = function(mode) { applyMode(mode); localStorage.setItem('jr_mode', mode); };
   window.setTheme = function(theme) { applyTheme(theme); localStorage.setItem('jr_theme', theme); };
-
   function applyMode(mode) {
     document.documentElement.removeAttribute('data-theme');
-    if (mode === 'dark')   document.documentElement.setAttribute('data-theme', 'dark');
-    if (mode === 'server') document.documentElement.setAttribute('data-theme', 'server');
-    [lightBtn, darkBtn, serverBtn].forEach(b => b && b.classList.remove('active'));
-    if (mode === 'dark'   && darkBtn)   darkBtn.classList.add('active');
-    else if (mode === 'server' && serverBtn) serverBtn.classList.add('active');
+    if (mode==='dark') document.documentElement.setAttribute('data-theme','dark');
+    if (mode==='server') document.documentElement.setAttribute('data-theme','server');
+    [lightBtn,darkBtn,serverBtn].forEach(b=>b&&b.classList.remove('active'));
+    if (mode==='dark'&&darkBtn) darkBtn.classList.add('active');
+    else if (mode==='server'&&serverBtn) serverBtn.classList.add('active');
     else if (lightBtn) lightBtn.classList.add('active');
   }
   function applyTheme(theme) {
-    const t = themes[theme] || themes.teal;
-    const mode = localStorage.getItem('jr_mode') || 'light';
-    if (mode === 'server') return;
-    document.documentElement.style.setProperty('--primary', t.primary);
-    document.documentElement.style.setProperty('--primary-hover', t.primaryHover);
-    if (themeSelect) themeSelect.value = theme;
+    const t=themes[theme]||themes.teal;
+    if (localStorage.getItem('jr_mode')==='server') return;
+    document.documentElement.style.setProperty('--primary',t.primary);
+    document.documentElement.style.setProperty('--primary-hover',t.primaryHover);
+    if (themeSelect) themeSelect.value=theme;
   }
 })();
 </script>
