@@ -18,7 +18,7 @@
       <img src="/logo.png" alt="JobRadar Logo" style="width:42px;height:42px;object-fit:contain;border-radius:8px;">
       <div>JobRadar</div>
     </div>
-    <button class="btn settings-btn" id="settingsBtn" title="Einstellungen" onclick="openSettings()">
+    <button class="btn settings-btn" id="settingsBtn" title="Einstellungen" onclick="router.navigate('einstellungen')">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -27,21 +27,26 @@
     </button>
   </div>
   <div id="loadingBar" class="loading-bar"></div>
-  <div class="tabs">
-    <button class="tab active" data-tab="dashboard">Dashboard</button>
-    <button class="tab" data-tab="kanban">🗂 Kanban</button>
-    <button class="tab" data-tab="suche">Stellensuche</button>
-    <button class="tab" data-tab="verlauf">Verlauf</button>
-    <button class="tab" data-tab="anschreiben">Anschreiben</button>
-    <button class="tab" data-tab="anschreiben-verlauf">📝 KI-Verlauf</button>
-    <button class="tab" data-tab="vorlagen">KI-Stile</button>
-    <button class="tab" data-tab="erfahrungen">Erfahrungen</button>
-    <button class="tab" data-tab="vault">📄 CV-Vault</button>
-    <button class="tab" data-tab="profil">Profil</button>
-  </div>
+
+  <!-- Navigation -->
+  <nav class="tabs" role="tablist" aria-label="Hauptnavigation">
+    <!-- Hauptfunktionen -->
+    <button class="tab active" data-nav="dashboard" role="tab" aria-selected="true" onclick="router.navigate('dashboard')">📊 Dashboard</button>
+    <button class="tab" data-nav="suche" role="tab" aria-selected="false" onclick="router.navigate('suche')">🔍 Stellensuche</button>
+    <button class="tab" data-nav="bewerbungen" role="tab" aria-selected="false" onclick="router.navigate('bewerbungen')">📋 Bewerbungen</button>
+    <button class="tab" data-nav="kanban" role="tab" aria-selected="false" onclick="router.navigate('kanban')">🗂 Kanban</button>
+    <!-- KI & Dokumente -->
+    <button class="tab" data-nav="ki" role="tab" aria-selected="false" onclick="router.navigate('ki')">✨ Anschreiben</button>
+    <button class="tab" data-nav="ki-verlauf" role="tab" aria-selected="false" onclick="router.navigate('ki-verlauf')">📝 KI-Verlauf</button>
+    <button class="tab" data-nav="vorlagen" role="tab" aria-selected="false" onclick="router.navigate('vorlagen')">🎨 KI-Stile</button>
+    <button class="tab" data-nav="vault" role="tab" aria-selected="false" onclick="router.navigate('vault')">📄 CV-Vault</button>
+    <!-- Profil -->
+    <button class="tab" data-nav="erfahrungen" role="tab" aria-selected="false" onclick="router.navigate('erfahrungen')">🛠 Erfahrungen</button>
+    <button class="tab" data-nav="profil" role="tab" aria-selected="false" onclick="router.navigate('profil')">👤 Profil</button>
+  </nav>
 
   <!-- Dashboard -->
-  <div class="tabpanel active" id="dashboard">
+  <div class="tabpanel active" id="dashboard" role="tabpanel">
     <div class="stat-grid">
       <div class="stat"><div class="num" id="statGesamt">–</div><div class="lbl">Gesamt</div></div>
       <div class="stat"><div class="num" id="statFaellig">–</div><div class="lbl">Überfällig</div></div>
@@ -65,7 +70,7 @@
   </div>
 
   <!-- Kanban -->
-  <div class="tabpanel" id="kanban">
+  <div class="tabpanel" id="kanban" role="tabpanel">
     <div class="card" style="margin-bottom:16px">
       <h2>🗂 Kanban-Board</h2>
       <p class="muted" style="font-size:14px">Verschiebe Bewerbungen mit den Pfeilen ← → zwischen den Spalten.</p>
@@ -76,7 +81,7 @@
   </div>
 
   <!-- Stellensuche -->
-  <div class="tabpanel" id="suche">
+  <div class="tabpanel" id="suche" role="tabpanel">
     <div class="card">
       <h2>Stellensuche</h2>
       <div class="row3">
@@ -133,8 +138,8 @@
     </details>
   </div>
 
-  <!-- Verlauf -->
-  <div class="tabpanel" id="verlauf">
+  <!-- Bewerbungen -->
+  <div class="tabpanel" id="bewerbungen" role="tabpanel">
     <div class="card">
       <h2>Bewerbungsverlauf</h2>
       <div class="row3">
@@ -164,7 +169,7 @@
   </div>
 
   <!-- Anschreiben -->
-  <div class="tabpanel" id="anschreiben">
+  <div class="tabpanel" id="anschreiben" role="tabpanel">
     <div class="card">
       <h2>Anschreiben-Generator</h2>
       <div class="stack">
@@ -188,14 +193,14 @@
         <div class="footerbar">
           <button class="btn primary" onclick="exportPdf()">Als PDF exportieren</button>
           <button class="btn" onclick="sendMail()">✉ Als E-Mail öffnen</button>
-          <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('letterPreview').value).then(()=>toast('Kopiert \u2713'))">Kopieren</button>
+          <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('letterPreview').value).then(()=>toast('Kopiert ✓'))">Kopieren</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- KI-Verlauf -->
-  <div class="tabpanel" id="anschreiben-verlauf">
+  <div class="tabpanel" id="anschreiben-verlauf" role="tabpanel">
     <div class="card">
       <h2>📝 KI-Anschreiben-Verlauf</h2>
       <p class="muted" style="font-size:14px;margin-bottom:16px">Alle generierten Anschreiben – klicke auf "Laden" um ein früheres Anschreiben wieder zu öffnen.</p>
@@ -204,7 +209,7 @@
   </div>
 
   <!-- KI-Stile -->
-  <div class="tabpanel" id="vorlagen">
+  <div class="tabpanel" id="vorlagen" role="tabpanel">
     <div class="vorlage-layout">
       <div>
         <div class="card">
@@ -252,7 +257,7 @@
   </div>
 
   <!-- Erfahrungen -->
-  <div class="tabpanel" id="erfahrungen">
+  <div class="tabpanel" id="erfahrungen" role="tabpanel">
     <div class="erfahrungen-layout">
       <div class="card">
         <h2>🛠 Skills &amp; Technologien</h2>
@@ -306,7 +311,7 @@
   </div>
 
   <!-- CV-Vault -->
-  <div class="tabpanel" id="vault">
+  <div class="tabpanel" id="vault" role="tabpanel">
     <div class="card">
       <h2>📄 Lebenslauf-Vault</h2>
       <p class="muted" style="font-size:14px;margin-bottom:20px">Speichere mehrere Lebenslauf-Versionen und verknüpfe pro Bewerbung welchen CV du geschickt hast.</p>
@@ -321,7 +326,7 @@
   </div>
 
   <!-- Profil -->
-  <div class="tabpanel" id="profil">
+  <div class="tabpanel" id="profil" role="tabpanel">
     <div class="card">
       <h2>Mein Profil</h2>
       <div class="stack">
@@ -345,7 +350,7 @@
   </div>
 
   <!-- Einstellungen -->
-  <div class="tabpanel" id="einstellungen">
+  <div class="tabpanel" id="einstellungen" role="tabpanel">
     <div class="settings-page">
       <div class="card">
         <h2>🌟 Erscheinungsbild</h2>
@@ -524,6 +529,10 @@
   </div>
 </div>
 
+<script src="/js/core/state.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/core/router.js"></script>
+<script src="/js/core/ui.js"></script>
 <script src="/js/erfahrungen.js"></script>
 <script src="/js/settings.js"></script>
 <script src="/js/dokumente.js"></script>
@@ -531,6 +540,12 @@
 <script src="/js/snapshot.js"></script>
 <script src="/js/vault.js"></script>
 <script src="/js/kanban.js"></script>
+<script src="/js/modules/bewerbungen.js"></script>
+<script src="/js/modules/dashboard.js"></script>
+<script src="/js/modules/einstellungen.js"></script>
+<script src="/js/modules/import.js"></script>
+<script src="/js/modules/ki.js"></script>
+<script src="/js/modules/suche.js"></script>
 <script src="/js/app.js"></script>
 <script>
 (function() {
@@ -556,21 +571,7 @@
     if (el) el.textContent = 'Version ' + (d.version || '–');
   }).catch(()=>{
     const el = document.getElementById('settingsVersion');
-    if (el) el.textContent = 'Version 1.0.0';
-  });
-
-  window.openSettings = function() {
-    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.getElementById('einstellungen').classList.add('active');
-    document.getElementById('settingsBtn').classList.add('active-settings');
-    if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
-  };
-
-  document.querySelectorAll('.tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.getElementById('settingsBtn').classList.remove('active-settings');
-    });
+    if (el) el.textContent = 'Version 2.0.0';
   });
 
   window.setMode = function(mode) { applyMode(mode); localStorage.setItem('jr_mode', mode); };
