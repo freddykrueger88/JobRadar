@@ -1,7 +1,7 @@
 {
   "name": "jobradar",
   "version": "2.0.0",
-  "description": "Vollständig lokaler KI-Bewerbungsassistent mit Ollama, SQLite und PWA",
+  "description": "Vollst\u00e4ndig lokaler KI-Bewerbungsassistent mit Ollama, SQLite und PWA",
   "main": "src/index.js",
   "scripts": {
     "start":       "node src/index.js",
@@ -10,7 +10,7 @@
     "test:api":    "node --test tests/api/*.test.js",
     "test:all":    "node --test tests/**/*.test.js",
     "migrate":     "node -e \"require('./src/db/database')\"",
-    "lint":        "eslint src/ public/js/ --ext .js"
+    "lint":        "eslint src/"
   },
   "dependencies": {
     "better-sqlite3":    "^9.6.0",
@@ -30,7 +30,7 @@
     "nodemon":           "^3.1.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "license": "MIT"
 }
