@@ -26,7 +26,7 @@ jobs:
           cache: 'npm'
 
       - name: Abhaengigkeiten installieren
-        run: npm ci
+        run: npm install
 
       - name: Unit-Tests (Services)
         run: npm test
