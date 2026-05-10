@@ -16,16 +16,22 @@ describe('ProfilService', () => {
     assert.ok(p !== undefined);
   });
 
-  it('upsert() speichert Profilwerte', () => {
-    svc.upsert({ vorname: 'Max', nachname: 'Mustermann' });
+  it('update() speichert Profilwerte', () => {
+    svc.update({ name: 'Max Mustermann', ort: 'Bremen' });
     const p = svc.get();
-    assert.equal(p.vorname, 'Max');
-    assert.equal(p.nachname, 'Mustermann');
+    assert.equal(p.name, 'Max Mustermann');
+    assert.equal(p.ort, 'Bremen');
   });
 
-  it('upsert() überschreibt bestehende Werte', () => {
-    svc.upsert({ vorname: 'Anna' });
+  it('update() überschreibt bestehende Werte', () => {
+    svc.update({ name: 'Anna Schmidt' });
     const p = svc.get();
-    assert.equal(p.vorname, 'Anna');
+    assert.equal(p.name, 'Anna Schmidt');
+  });
+
+  it('update() ohne bekannte Felder gibt unverändertes Objekt zurück', () => {
+    const before = svc.get();
+    const after  = svc.update({ unbekannt: 'xyz' });
+    assert.equal(before.name, after.name);
   });
 });
