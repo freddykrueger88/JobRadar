@@ -15,8 +15,27 @@ const app    = express();
 const PORT   = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 
-// ── Security
-app.use(helmet());
+// ── Security mit konfigurierter CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'"],   // Vanilla JS inline erlaubt
+      styleSrc:       ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc:        ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc:         ["'self'", 'data:', 'blob:'],
+      connectSrc:     ["'self'"],
+      workerSrc:      ["'self'", 'blob:'],             // Service Worker
+      manifestSrc:    ["'self'"],
+      mediaSrc:       ["'none'"],
+      objectSrc:      ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri:        ["'self'"],
+      formAction:     ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // PWA-Kompatibilität
+}));
 
 // ── Body-Parser
 app.use(express.json({ limit: '512kb' }));
@@ -34,7 +53,7 @@ app.use('/api/ki/', rateLimit({
   message: { error: 'KI-Limit erreicht – bitte 5 Minuten warten.' }
 }));
 
-// ── HTML nie cachen (damit Updates nach git pull + restart sofort wirken)
+// ── HTML nie cachen (Updates wirken sofort nach docker compose up --build)
 app.use((req, res, next) => {
   if (req.path.endsWith('.html') || req.path === '/') {
     res.setHeader('Cache-Control', 'no-store');
@@ -47,7 +66,7 @@ app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h', etag: 
 
 // ── Health
 app.get('/health', (req, res) => {
-  if (isProd && !['localhost','127.0.0.1'].includes(req.hostname)) return res.status(404).end();
+  if (isProd && !['localhost', '127.0.0.1'].includes(req.hostname)) return res.status(404).end();
   const db = require('./db/adapter');
   let dbOk = false;
   try { db.get('SELECT 1'); dbOk = true; } catch (_) {}
@@ -55,19 +74,19 @@ app.get('/health', (req, res) => {
 });
 
 // ── API-Routen
-app.use('/api/bewerbungen',   require('./routes/bewerbungen'));
-app.use('/api/bewerbungen/:id/dokumente', require('./routes/dokumente'));  // mergeParams
-app.use('/api/suche',         require('./routes/suche'));
-app.use('/api/ki',            require('./routes/ki'));
-app.use('/api/profil',        require('./routes/profil'));
-app.use('/api/erfahrungen',   require('./routes/erfahrungen'));
-app.use('/api/vault',         require('./routes/vault'));
-app.use('/api/import',        require('./routes/import'));
-app.use('/api/einstellungen', require('./routes/einstellungen'));
-app.use('/api/push',          require('./routes/push'));
-app.use('/api/vorlagen',      require('./routes/vorlagen'));
+app.use('/api/bewerbungen',              require('./routes/bewerbungen'));
+app.use('/api/bewerbungen/:id/dokumente', require('./routes/dokumente'));
+app.use('/api/suche',                    require('./routes/suche'));
+app.use('/api/ki',                       require('./routes/ki'));
+app.use('/api/profil',                   require('./routes/profil'));
+app.use('/api/erfahrungen',              require('./routes/erfahrungen'));
+app.use('/api/vault',                    require('./routes/vault'));
+app.use('/api/import',                   require('./routes/import'));
+app.use('/api/einstellungen',            require('./routes/einstellungen'));
+app.use('/api/push',                     require('./routes/push'));
+app.use('/api/vorlagen',                 require('./routes/vorlagen'));
 
-// ── SPA-Fallback (vor den Error-Handlern, nach allen API-Routen)
+// ── SPA-Fallback
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.setHeader('Cache-Control', 'no-store');
